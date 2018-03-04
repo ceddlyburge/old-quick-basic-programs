@@ -1,0 +1,1965 @@
+R(P, N, 2), LET$(PLAYER(P, N, 4)), CO(P)
+  IF move(PLAYER(P, N, 4)) - MOVES > 0 THEN QUICKINFO P, N, TURNS, move(PLAYER(P, N, 4)) - MOVES
+  LOOP UNTIL MOVES >= move(PLAYER(P, N, 4))
+  IF PLAYER(P, N, 5) < 1 AND sustain(TERAIN(PLAYER(P, N, 1), PLAYER(P, N, 2))) = 0 THEN PLAYER(P, N, 3) = 0
+  IF INAIR(PLAYER(P, N, 4)) = 1 THEN PLAYER(P, N, 5) = PLAYER(P, N, 5) - 1
+  IF PLAYER(P, N, 5) < 1 AND INAIR(PLAYER(P, N, 4)) = 1 THEN PLAYER(P, N, 3) = 0
+ END IF
+NEXT P
+NEXT N
+END SUB
+
+SUB PIC
+SCREEN 0
+WIDTH , 43
+FOR N = 1 TO 60
+FOR S = 1 TO 40
+COLOR 0, TECOL(TERAIN(N, S))
+LOCATE S, N + 20: PRINT TER$(TERAIN(N, S))
+NEXT S, N
+END SUB
+
+SUB posforces (P)
+COLOR 0, 0
+CLS
+IF P = 1 THEN min = 1: max = 30
+IF P = 2 THEN min = 31: max = 59
+PIC
+FOR N = 1 TO 30
+X = min
+Y = 1
+LOCATE Y, X + 20: COLOR 0, TECOL(TERAIN(X, Y)): PRINT TER$(TERAIN(X, Y))
+IF PLAYER(P, N, 3) > 0 THEN
+DO
+ COLOR 15, 0
+ LOCATE 1, 1
+ PRINT STRING$(20, 196)
+ PRINT "Forces: ";
+ COLOR 12, 0: PRINT "Player "; P
+ COLOR 15, 0
+ PRINT STRING$(20, 196)
+ PRINT
+ PRINT "Type of unit:"
+ COLOR 12, 0
+ PRINT " "; full(PLAYER(P, N, 4))
+ COLOR 15, 0
+ PRINT
+ PRINT "Range of attack:";
+ COLOR 12, 0: PRINT maxrange(PLAYER(P, N, 4))
+ COLOR 15, 0
+ PRINT
+ PRINT "Supply  status:";
+ COLOR 12, 0: PRINT PLAYER(P, N, 5)
+ COLOR 15, 0
+ PRINT
+ PRINT "Movement range:";
+ COLOR 12, 0: PRINT move(PLAYER(P, N, 4))
+ COLOR 15, 0
+ PRINT
+ PRINT STRING$(20, 196)
+ PRINT "Terrain: ";
+ COLOR 12, 0: PRINT TERFUL(TERAIN(X, Y))
+ COLOR 15, 0
+ PRINT STRING$(20, 196)
+ PRINT
+ PRINT "Defence bonus:";
+ COLOR 12, 0: PRINT defbonus(TERAIN(X, Y)); " "
+ COLOR 15, 0
+ PRINT
+ PRINT "Movement cost:";
+ COLOR 12, 0: PRINT movepen(TERAIN(X, Y)); " "
+ COLOR 15, 0
+ PRINT
+ PRINT "Supply point?";
+ COLOR 12, 0
+ IF suplyPT(TERAIN(X, Y)) = 1 THEN PRINT " Yes" ELSE PRINT " No "
+ COLOR 15, 0
+ PRINT
+ PRINT "Suitable for Navy?"
+ COLOR 12, 0
+ IF LANDONLY(TERAIN(X, Y)) = 0 THEN PRINT " Yes" ELSE PRINT " No "
+ COLOR 15, 0
+ PRINT
+ PRINT "Suitable for Army?"
+ COLOR 12, 0
+ IF SHIPONLY(TERAIN(X, Y)) = 0 THEN PRINT " Yes" ELSE PRINT " No "
+ PRINT
+ PRINT
+ PRINT
+ PRINT
+ COLOR 11
+ PRINT "Choose your troop"
+ PRINT "positions player"; P
+ PRINT
+ PRINT "Use numeric pad "
+ PRINT "cursors to change"
+ PRINT "position and 5 to"
+ PRINT "fix location of"
+ PRINT "each unit"
+A$ = INPUT$(1)
+  LOCATE Y, X + 20: COLOR 0, TECOL(TERAIN(X, Y)): PRINT TER$(TERAIN(X, Y))
+  IF A$ = "5" THEN
+  ok = 1
+  IF WHOSTHERE(X, Y) <> 0 THEN ok = 0
+  IF LANDONLY(TERAIN(X, Y)) = 1 AND SHIP(PLAYER(P, N, 4)) AND INAIR(PLAYER(P, N, 4)) = 0 THEN ok = 0
+  IF SHIPONLY(TERAIN(X, Y)) = 1 AND SHIP(PLAYER(P, N, 4)) = 0 AND INAIR(PLAYER(P, N, 4)) = 0 THEN ok = 0
+  IF ok THEN EXIT DO
+  END IF
+  IF A$ = "1" THEN DY = 1: DX = -1
+  IF A$ = "2" THEN DY = 1: DX = 0
+  IF A$ = "3" THEN DY = 1: DX = 1
+  IF A$ = "4" THEN DX = -1: DY = 0
+  IF A$ = "6" THEN DX = 1: DY = 0
+  IF A$ = "7" THEN DY = -1: DX = -1
+  IF A$ = "8" THEN DY = -1: DX = 0
+  IF A$ = "9" THEN DY = -1: DX = 1
+  IF X + DX > max THEN DX = 0
+  IF X + DX < min THEN DX = 0
+  IF Y + DY > 40 THEN DY = 0
+  IF Y + DY < 1 THEN DY = 0
+IF WHOSTHERE(X, Y) <> 0 THEN
+IF WHOSTHERE(X, Y) > 200 THEN TR = WHOSTHERE(X, Y) - 200: TP = 2 ELSE TR = WHOSTHERE(X, Y) - 100: TP = 1
+LOCATE Y, X + 20
+COLOR 15, 0
+PRINT LET$(PLAYER(TP, TR, 4))
+END IF
+X = X + DX
+Y = Y + DY
+LOCATE Y, X + 20: COLOR 30, 0: PRINT LET$(PLAYER(P, N, 4))
+LOOP
+END IF
+PLAYER(P, N, 1) = X
+PLAYER(P, N, 2) = Y
+LOCATE Y, X + 20: COLOR 15, 0: PRINT LET$(PLAYER(P, N, 4))
+WHOSTHERE(X, Y) = P * 100 + N
+NEXT N
+IF P = 2 THEN
+SCREEN 12
+FOR T = 1 TO 40
+FOR S = 1 TO 60
+LINE (S * 2, (T * 2) + 395)-STEP(2, 2), TECOL(TERAIN(S, T)), BF
+NEXT S, T
+GET (2, 395)-STEP(120, 80), MAP
+END IF
+END SUB
+
+SUB QUICKINFO (P, N, TURNS, MOVES)
+COLOR 12
+LOCATE 2, 16
+PRINT P
+LOCATE 6, 1
+PRINT " "; full(PLAYER(P, N, 4))
+LOCATE 8, 7
+PRINT maxrange(PLAYER(P, N, 4))
+LOCATE 10, 12
+PRINT MOVES
+LOCATE 13, 1
+PRINT INT(PLAYER(P, N, 3)); "  "
+LOCATE 15, 15
+PRINT PLAYER(P, N, 5); "  "
+LOCATE 18, 10
+PRINT TERFUL(TERAIN(PLAYER(P, N, 1), PLAYER(P, N, 2)))
+LOCATE 21, 15
+PRINT defbonus(TERAIN(PLAYER(P, N, 1), PLAYER(P, N, 2)))
+LOCATE 23, 15
+PRINT movepen(TERAIN(PLAYER(P, N, 1), PLAYER(P, N, 2)))
+LOCATE 25, 14
+IF supply(TERAIN(PLAYER(P, N, 1), PLAYER(P, N, 2))) = 1 THEN PRINT " Yes" ELSE PRINT " No "
+LOCATE 28, 1
+IF LANDONLY(TERAIN(PLAYER(P, N, 1), PLAYER(P, N, 2))) = 0 THEN PRINT " Yes" ELSE PRINT " No "
+LOCATE 31, 1
+IF SHIPONLY(TERAIN(PLAYER(P, N, 1), PLAYER(P, N, 2))) = 0 THEN PRINT " Yes" ELSE PRINT " No "
+LOCATE 33, 6
+PRINT TURNS
+PUT (20, 395), MAP, PSET
+FOR T = 1 TO 2
+FOR S = 1 TO 30
+IF PLAYER(T, S, 3) > 0 THEN LINE (20 + ((PLAYER(T, S, 1) - 1) * 2), (2 * (PLAYER(T, S, 2))) + 395)-STEP(2, 2), 0 + (T - 1) * 14, BF
+NEXT S, T
+END SUB
+
+SUB readterain (filename$)
+OPEN filename$ FOR INPUT AS #1
+FOR N = 1 TO 40
+FOR T = 1 TO 60
+INPUT #1, TERAIN(T, N)
+NEXT T, N
+END SUB
+
+SUB show (X, Y, S$, cl)
+WIDTH , 60
+COLOR 0
+LINE (160, 0)-(640, 480), , BF
+COLOR 15
+LINE (160, 0)-(639, 479), , B
+FOR N = 160 TO 640 STEP 48
+LINE (N, 1)-(N, 480)
+NEXT N
+FOR N = 1 TO 480 STEP 48
+LINE (160, N)-(640, N)
+NEXT N
+FOR N = 1 TO 30
+COLOR CO(1)
+IF PLAYER(1, N, 3) > 0 THEN LOCATE PLAYER(1, N, 2), PLAYER(1, N, 1) + 20: PRINT LET$(PLAYER(1, N, 4))'--- , player1(n, 3), player1(n, 5)
+COLOR CO(2)
+IF PLAYER(2, N, 3) > 0 THEN LOCATE PLAYER(2, N, 2), PLAYER(2, N, 1) + 20: PRINT LET$(PLAYER(2, N, 4))'--- , player2(n, 3), player2(n, 5)
+NEXT N
+LOCATE Y, X + 20: COLOR 11: PRINT S$
+END SUB
+
+ Player(1, N, 1)PY 1, 0
+LOOP
+player(p, n, 1) = x
+player(p, n, 2) = y
+END IF
+NEXT n
+END SUB
+
+SUB readterain (filename$)
+OPEN filename$ FOR INPUT AS #1
+FOR n = 1 TO 40
+FOR t = 1 TO 60
+INPUT #1, terain(t, n)
+NEXT t, n
+END SUB
+
+SUB show (x, y, s$, cl)
+WIDTH , 43
+COLOR 6
+LINE (160, 0)-(640, 350), , BF
+FOR n = 1 TO 30
+COLOR col(1)
+IF player(1, n, 3) > 0 THEN LOCATE player(1, n, 2), player(1, n, 1) + 20: PRINT let$(player(1, n, 4))'--- , player1(n, 3), player1(n, 5)
+COLOR col(2)
+IF player(2, n, 3) > 0 THEN LOCATE player(2, n, 2), player(2, n, 1) + 20: PRINT let$(player(2, n, 4))'--- , player2(n, 3), player2(n, 5)
+NEXT n
+LOCATE y, x + 20: COLOR 11: PRINT s$
+END SUB
+
+ 1 TO 60
+INPUT #1, terain(t, n)
+NEXT t, n
+END SUB
+
+SUB show (x, y, s$, cl)
+WIDTH , 43
+COLOR 6
+LINE (160, 0)-(640, 350), , BF
+FOR n = 1 TO 30
+COLOR col(1)
+IF player(1, n, 3) > 0 THEN LOCATE player(1, n, 2), player(1, n, 1) + 20: PRINT let$(player(1, n, 4))'--- , player1(n, 3), player1(n, 5)
+COLOR col(2)
+IF player(2, n, 3) > 0 THEN/ Monochrome PC Display (640x350);EGA Mono
+SDEHM7
+GEM DEVICE DRIVER DISK #2
+[3]
+
+
+This driver is for the IBM enhanced graphic adapter card. It must be
+used in conjunction with the IBM monochrome monitor. It provides two
+colors at a resolution of 640H x 350V pixels.
+|IBM Enhanced Card / Color Display (640x200) 8 colors;EGA 8 Color
+SDEL87
+GEM DEVICE DRIVER DISK #1
+[7]
+
+
+This driver is for the IBM enhanced graphic adapter card. It must be
+used  in conjunction with the IBM color monitor.  It  pr3,5,6,3,3,3,3,2,2,2,2,2,2,3,3,3,3,3,3,3,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,2
+3,3,6,3,3,3,3,3,2,2,2,2,3,3,3,3,3,3,3,3,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,1,1,1,1
+3,3,6,3,5,3,3,3,3,3,2,2,3,3,3,3,3,3,3,2,2,2,1,1,2,1,1,1,1,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,1,1,2,2,2,1,1
+3,3,6,5,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,2,1,1,2,2,2,2,2,1,1,2,2,1,1,1,1,1,1,1,7,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,1,1
+5,3,6,3,4,4,4,3,3,4,4,3,3,3,3,5,3,3,3,3,2,2,2,2,1,1,1,1,1,2,1,2,2,1,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,2,1,1,1,1,1,1,1,1,1,1
+3,5,6,4,4,4,4,4,3,4,4,4,4,4,5,6,3,3,3,3,3,2,2,2,2,1,1,2,1,2,1,2,2,1,2,2,1,1,1,1,1,1,1,1,1,2,2,2,1,2,1,7,1,1,1,1,1,1,1,1
+3,3,6,5,4,4,4,4,4,4,4,4,4,5,6,5,4,4,3,3,3,3,2,1,1,1,2,2,2,2,1,1,2,1,1,2,1,2,1,1,2,2,1,1,1,1,1,2,2,2,1,7,1,1,1,1,1,1,1,1
+3,4,5,6,4,4,4,4,4,4,4,4,4,4,5,6,5,4,4,3,3,3,2,2,2,2,2,2,2,2,2,2,2,2,1,2,1,2,1,1,2,1,1,1,1,1,1,2,1,2,2,2,1,1,1,1,1,1,1,1
+3,4,4,4,6,5,4,4,4,4,4,4,4,4,4,5,6,4,4,4,3,3,3,3,2,3,3,2,3,3,2,3,3,2,2,2,2,2,2,1,2,1,1,1,1,1,1,2,1,1,1,1,1,1,1,1,1,1,1,2
+3,4,4,4,4,6,6,5,4,4,5,4,4,4,4,4,6,4,4,4,4,4,3,3,3,3,3,3,3,3,3,5,3,6,5,3,10,3,2,2,2,2,1,1,2,1,1,2,2,1,2,1,2,2,2,1,1,1,1,2
+4,4,10,10,4,4,4,6,6,6,4,4,4,4,4,4,6,4,4,4,4,4,4,3,3,3,4,4,3,5,3,3,6,3,3,10,10,10,3,2,2,2,2,1,2,1,2,2,1,2,2,1,2,2,2,1,1,1,2,2
+4,10,10,10,4,4,4,4,5,6,4,4,4,4,4,4,6,5,4,4,4,4,4,4,4,4,4,4,4,4,6,6,3,3,3,3,10,3,3,3,3,2,3,2,2,2,2,2,2,2,2,2,2,2,1,2,1,2,2,2
+4,4,10,4,4,4,4,4,4,6,4,4,4,4,4,4,4,6,6,4,4,4,4,4,4,4,4,4,4,4,6,4,4,3,3,3,3,3,3,3,3,3,3,3,3,3,2,3,3,3,2,3,3,2,2,2,1,2,2,2
+4,4,4,4,4,4,4,4,4,6,6,6,4,4,4,4,4,4,6,4,4,4,4,4,4,4,4,4,4,4,6,6,4,4,4,4,4,4,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,2,3,3,2,3
+4,4,4,4,4,4,4,4,4,4,4,6,4,4,4,4,4,4,6,6,4,4,4,4,4,4,4,4,4,4,4,6,6,4,4,4,4,4,4,4,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3
+3,4,4,4,4,4,4,4,4,4,4,6,6,4,4,4,4,4,4,4,6,6,6,4,4,4,4,4,4,4,4,4,6,4,4,4,4,4,4,4,4,4,4,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4
+3,4,4,4,4,4,4,4,4,4,4,4,6,6,4,4,4,4,4,4,4,4,6,6,6,6,4,4,4,4,4,4,6,6,4,4,4,4,4,4,4,4,4,4,4,3,3,3,3,3,3,4,4,4,4,4,4,4,4,4
+3,3,4,4,4,4,4,4,4,4,4,4,4,6,6,4,4,4,4,4,4,4,4,4,4,6,6,4,4,4,4,4,4,6,6,4,4,4,4,4,4,4,4,4,4,4,4,4,3,4,4,4,4,4,4,4,4,4,4,4
+3,3,3,4,4,4,4,4,4,4,5,5,4,4,6,4,4,4,4,4,4,4,4,4,4,4,6,6,6,6,6,4,4,4,6,6,4,4,4,4,4,4,4,4,4,4,4,4,3,4,4,4,4,4,4,4,4,4,4,4
+3,3,3,3,4,4,4,4,4,5,6,6,4,4,6,6,6,6,4,4,4,4,4,4,4,4,4,4,4,4,6,6,6,4,5,6,6,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,2,4
+3,3,3,3,4,4,4,4,4,4,4,5,6,4,4,4,4,6,6,4,4,4,4,4,4,4,4,4,4,4,4,5,6,6,5,5,6,5,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,2,4
+3,3,3,3,4,4,4,4,4,4,4,4,4,6,6,6,4,4,6,4,4,4,4,4,4,4,4,4,4,4,4,5,5,6,6,6,6,6,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,6
+2,3,3,3,3,4,4,4,4,4,4,4,4,4,4,6,6,4,5,6,4,4,4,4,4,4,6,6,6,6,6,6,6,5,6,6,5,6,6,6,6,4,5,6,5,4,4,4,4,4,4,4,4,4,4,4,4,4,4,6
+2,2,3,3,3,4,4,4,4,4,4,4,4,4,4,4,6,6,6,6,6,6,4,4,4,4,6,4,6,4,4,4,4,5,6,5,4,4,4,5,6,6,6,6,6,6,6,6,6,6,4,4,4,4,4,4,4,4,4,6
+2,2,3,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,6,6,6,6,6,6,4,4,4,4,4,6,6,6,4,4,4,4,4,4,4,4,4,4,4,4,4,4,6,6,4,4,4,4,4,4,4,4,6
+2,3,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,6,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,6,6,4,4,4,4,4,4,4,6
+3,3,3,4,4,4,4,4,4,4,4,4,4,3,4,4,4,4,4,4,4,4,4,4,4,5,4,4,4,4,4,6,6,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,6,4,4,4,4,4,4,4,6
+3,3,4,4,4,4,4,3,3,4,4,4,4,4,3,3,4,4,4,4,4,4,4,4,6,6,5,5,5,4,4,6,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,6,6,4,4,4,4,4,4,5
+3,4,4,4,3,3,3,3,2,3,4,4,4,3,2,3,4,4,4,4,4,4,4,4,5,6,6,6,6,6,6,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,6,6,4,4,4,5,5,5
+3,4,4,4,3,2,3,2,3,4,4,4,3,2,3,4,3,4,4,4,4,3,4,3,3,3,3,5,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,6,6,6,5,5,5,6
+3,2,4,3,2,3,2,3,4,4,4,3,3,3,4,4,4,4,4,4,3,3,3,3,7,7,3,3,4,4,4,4,4,3,3,2,3,3,2,4,4,4,4,4,4,4,4,7,4,4,4,4,4,4,5,6,6,6,6,6
+3,3,3,3,2,2,3,4,4,4,3,3,4,4,4,4,4,4,4,3,2,2,3,3,7,3,3,3,3,3,4,4,3,2,2,2,2,2,3,3,3,4,4,4,5,5,4,4,4,4,4,4,4,4,4,5,5,5,6,6
+3,3,2,2,2,2,3,4,4,4,4,3,4,4,4,4,4,4,3,3,2,2,2,2,2,2,2,2,2,3,4,3,3,3,2,3,3,3,3,7,5,3,4,7,7,4,4,4,4,4,4,4,4,4,4,4,5,5,5,5
+3,2,2,2,2,2,3,4,4,4,4,4,3,4,3,3,3,3,3,2,2,2,2,2,2,2,2,2,2,2,3,2,3,2,2,2,2,2,3,5,3,4,4,4,4,4,4,4,4,4,4,4,4,6,4,4,4,5,5,5
+3,2,3,2,2,3,3,3,4,4,4,4,4,3,2,2,2,3,3,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,3,4,4,4,4,4,4,4,4,4,4,4,4,4,6,5,4,4,4,4,5
+3,3,3,3,3,2,3,3,4,4,4,4,3,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,3,3,4,4,4,4,4,4,4,4,4,4,4,4,4,6,4,4,5,4,4,4
+3,3,3,3,3,3,3,3,3,3,3,3,2,2,2,2,2,2,2,2,2,3,3,2,2,2,2,2,2,2,2,2,2,2,2,2,3,2,2,2,4,4,4,4,4,4,4,4,4,4,4,4,4,6,10,4,4,4,4,4
+3,3,3,3,3,3,3,3,3,3,3,2,2,2,2,2,2,2,2,2,2,2,3,3,2,2,2,2,2,2,2,2,2,2,2,3,3,3,2,3,4,4,4,4,4,4,4,4,4,4,4,4,4,6,10,10,4,4,5,4
+3,3,3,3,3,2,3,2,3,3,3,2,3,3,2,2,2,2,2,2,2,2,2,3,3,2,2,2,2,2,3,2,3,2,3,4,4,3,3,4,4,4,4,4,4,4,4,4,4,4,4,4,6,6,10,10,4,5,4,4
+3,3,3,3,2,2,2,2,2,3,3,3,3,2,2,2,2,2,2,7,3,2,2,3,3,3,3,3,2,3,3,3,3,3,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,6,10,10,4,4,4,4,5
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/šF€e“š¯~e–X¢a/š\qeƒ&˜0û‹.î =u €Ì0ƒ>‚0 tq€Ì0€š\›#‹àëcî ÷¶ u€>a/ t€Ì0š©0šŽµ›#N €Ì0€‰6~/€Ì0šäµ›#= =	 €> t€>a/ u°èØï÷˜0 tèç€Ì0¾ÿÿ‰6~/‰.î ƒ>
+tš ï0Àu°ëÎš1 ï0š:qeöÌ0tš‹pe»00ös/€uE DRIVER DISK #2
+[3,5,6,11,12]
+This is the IBM 640 x 350 Dutch 14 point font.
+|IBM 640 x 350 Dutch 18 Point
+IBMHTR18
+GEM DEVICE DRIVER DISK #2
+[3,5,6,11,12]
+This is the IBM 640 x 350 Dutch 18 point font.
+|IBM 640 x 350 Dutch 36 Point
+IBMHTR36
+GEM DEVICE DRIVER DISK #2
+[3,5,6,11,12]
+This is the IBM 640 x 350 Dutch 36 point font.
+|IBM 640 x 200 Swiss 10 Point
+IBMLSS10
+GEM DEVICE DRIVER DISK #1
+[1f,2f,7f,8f]
+This is the IBM 640 x 200 Swiss 10 point font.
+|IBM 640 x 200 Swiss 14 Point
+IBMLSS14
+GEM DEVICE DRIVER DISK #1
+[1f,2f,7f,8f]
+This is the IBM 640 x 200 Swiss 14 point font.
+|IBM 640 x 200 Swiss 18 Point
+IBMLSS18
+GEM DEVICE DRIVER DISK #1
+[1f,2f,7f,8f]
+This is the IBM 640 x 200 Swiss 18 point font.
+|IBM 640 x 200 Swiss 36 Point
+IBMLSS36
+GEM DEVICE DRIVER DISK #1
+[1f,2f,7f,8f]
+This is the IBM 640 x 200 Swiss 36 point font.
+|IBM 640 x 200 Dutch 10 Point
+IBMLTR10
+GEM DEVICE DRIVER DISK #1
+[1,2,7,8]
+This is the IBM 640 x 200 Dutch 10 point font.
+|IBM 640 x 200 Dutch 14 Point
+IBMLTR14
+GEM DEVICE DRIVER DISK #1
+[1,2,7,8]
+This is the IBM 640 x 200 Dutch 14 point font.
+|IBM 640 x 200 Dutch 18 Point
+IBMLTR18
+GEM DEVICE DRIVER DISK #1
+[1,2,7,8]
+This is the IBM 640 x 200 Dutch 18 point font.
+|IBM 640 x 200 Dutch 36 Point
+IBMLTR36
+GEM DEVICE DRIVER DISK #1
+[1,2,7,8]
+This is the IBM 640 x 200 Dutch 36 point font.
+|AT&T Swiss 7 Point
+IBMHSS07
+GEM DEVICE DRIVER DISK #2
+[10f]
+This is the AT&T Swiss 7 point font.
+|AT&T Swiss 10 Point
+IBMHSS10
+GEM DEVICE DRIVER DISK #2
+[10f]
+This is the AT&T Swiss 10 point font.
+|AT&T Swiss 14 Point
+IBMHSS14
+GEM DEVICE DRIVER DISK #2
+[10f]
+This is the AT&T Swiss 14 point font.
+|AT&T Swiss 18 Point
+IBMHSS18
+GEM DEVICE DRIVER DISK #2
+[10f]
+This is the AT&T Swiss 18 point font.
+|AT&T Swiss 36 Point
+IBMHSS36
+GEM DEVICE DRIVER DISK #2
+[10f]
+This is the AT&T Swiss 36 point font.
+|AT&T Dutch 7 Point
+IBMHTR07
+GEM DEVICE DRIVER DISK #2
+[10]
+This is the AT&T Dutch 7 point font.
+|AT&T Dutch 10 Point
+IBMHTR10
+GEM DEVICE DRIVER DISK #2
+[10]
+This is the AT&T Dutch 10 point font.
+|AT&T Dutch 14 Point
+IBMHTR14
+GEM DEVICE DRIVER DISK #2
+[10]
+This is the AT&T Dutch 14 point font.
+|AT&T Dutch 18 Point
+IBMHTR18
+GEM DEVICE DRIVER DISK #2
+[10]
+This is the AT&T Dutch 18 point font.
+|AT&T Dutch 36 Point
+IBMHTR36
+GEM DEVICE DRIVER DISK #2
+[10]
+This is the AT&T Dutch 36 point font.
+>MICE
+xx
+xx
+|No Mouse
+0
+The cursor keys are used to simulate mouse motion.  Please refer
+to the Desktop Keyboard Supplement.
+|SummaMouse / PC Mouse or Mouse Systems Compatible
+1
+This mouse connects to one of the serial ports.
+|Microsoft Bus Mouse ( Uses MOUSE.COM )
+2
+This mouse connects to a special hardware board.  Please refer
+to the Desktop Manual for jumper setting information.
+|Microsoft Serial Mouse ( RS232 )
+3
+This mouse connects to one of the serial ports.
+|SummaSketch 1201 with Stylus
+4
+This supports the 12 inch tablet with a Stylus.  The tablet
+connects to one of the serial ports.
+|SummaSketch 1201 with Cursor
+5
+This supports the 12 inch tablet with a Cursor.  The tablet
+connects to one of the serial ports.
+|SummaSketch 961  with Stylus
+6
+This supports the 9 inch tablet with a Stylus.  The tablet
+connects to one of the serial ports.
+|SummaSketch 961  with Cursor
+7
+This supports the 9 inch tablet with a Cursor.  The tablet
+connects to one of the serial ports.
+|Summagraphics MM1812 with Stylus
+8
+This supports the 18 inch tablet with a Stylus.  The tablet
+connects to one of the serial ports.
+|Summagraphics MM1812 with Cursor
+9
+This supports the 18 inch tablet with a Cursor.  The tablet
+connects to one of the serial ports.
+|IBM Personal System/2 Mouse
+:
+This is the IBM Personal System/2 mouse connected to the IBM
+mouse port.
+>MOUSE PORT
+xx
+xx
+|Communication Port #1 ( COM1: )
+0
+|Communication Port #2 ( COM2: )
+1
+>PLOTTERS
+11
+20
+|Hewlett Packard HP-GL compatible plotters;HP Plotter
+VDHPX7
+GEM DEVICE DRIVER DISK #2
+[1]
+
+
+This driver is for the Hewlett Packard pen plotter family
+and plotters compatible with the Hewlett Packard Graphics
+Language (HP-GL).  The  plotter must be set to 9600 baud
+with one stop bit and no parity.
+>PLOTTER FONTS
+xx
+xx
+>PLOTTER PORT
+xx
+xx
+|Communication Port #1 ( COM1: )
+0
+|Communication Port #2 ( COM2: )
+1
+>PRINTERS
+21
+30
+|IBM/Epson Printers High Resolution (120 x 144 dots/inch);IBM/Epson Hi
+PDEHI7
+GEM DEVICE DRIVER DISK #3
+[1b]
+DEVICE=GEMPRINT.SYS /D
+9600,N,8,1
+This driver is for the IBM Graphics printer, the Epson FX 80/100 and
+the Epson MX 80/100. The printers are driven in the 120 x 144 dots per
+inch mode.
+|IBM/Epson Printers Low Resolution (60 x 72 dots/inch);IBM/Epson Lo
+PDELO7
+GEM DEVICE DRIVER DISK #4
+[2b]
+DEVICE=GEMPRINT.SYS /D
+9600,N,8,1
+This driver is for the IBM Graphics printer, the Epson FX 80/100 and
+the Epson MX 80/100. The printers are driven in the 60 x 72 dots per
+inch mode.
+|IBM Color Jetprinter (100 x 96 dots/inch) 8 colors;IBM ColorJet
+PDINK7
+GEM DEVICE DRIVER DISK #1
+[3p]
+
+
+This  driver  is for the IBM Color Jetprinter. The  printer  is
+driven at 100 x 96 dots per inch. Eight colors are supported on this
+printer.
+|Xerox 4020 Color Ink Jet (120 x 240 dots/inch) 8 colors;XEROX 4020
+PDC207
+GEM DEVICE DRIVER DISK #3
+[4p]
+
+
+This driver is for the Xerox color printer. The printer is driven in
+the 120 x 240 dots per inch mode. The number of colors available is
+eight.
+|Epson LQ Series Printers (180 x 180 dots/inch);Epson LQ
+PDELQ7
+GEM DEVICE DRIVER DISK #4
+[5b]
+DEVICE=GEMPRINT.SYS /D
+9600,N,8,1
+This driver is for the Epson LQ Series Printers.  The printers are
+driven in the 180 x 180 dots per inch mode.
+|Hewlett Packard LaserJet+ ( 150 x 150 dots/inch );HP Laserjet+
+PDHPH7
+GEM DEVICE DRIVER DISK #4
+[6b]
+DEVICE=GEMPRINT.SYS /D
+9600,N,8,1
+This driver is for the Hewlett Packard LaserJet+ printer. The printer
+is driven at the 150 x 150 dots per inch mode. The number of colors
+available is two.
+|Apple LaserWriter Printer ( 300 x 300 dots/inch );Apple Laser
+PDAPL7
+GEM DEVICE DRIVER DISK #2
+[7s]
+DEVICE=GEMPRINT.SYS /A
+9600,N,8,1
+This driver is for the Apple LaserWriter. The printer is driven at
+300 x 300 dots per inch. The number of colors available is two.
+|Diablo 630 Daisywheel printer. ( No Graphics Supported );Diablo Daisy
+PDDBL7
+GEM DEVICE DRIVER DISK #3
+[8b]
+DEVICE=GEMPRINT.SYS /X
+9600,N,8,1
+This driver is for the Diablo 630 daisy wheel printer. Only text
+output is supported.
+|IBM Proprinter (120 x 144 dots/inch);Proprinter
+PDPRO7
+GEM DEVICE DRIVER DISK #3
+[9b]
+DEVICE=GEMPRINT.SYS /D
+9600,N,8,1
+This driver is for the IBM Proprinter.  The printer is driven in
+the 120 x 144 dots per inch mode.
+>PRINTER FONTS
+xx
+xx
+|IBM Proprinter / Epson Hi Res (120x144 dots/inch) Swiss 7 Point
+EPSHSS07
+GEM DEVICE DRIVER DISK #3
+[1f,9f]
+This is the IBM Proprinter / Epson Hi res Swiss 7 point font.
+|IBM Proprinter / Epson Hi Res (120x144 dots/inch) Swiss 10 Point
+EPSHSS10
+GEM DEVICE DRIVER DISK #3
+[1f,9f]
+This is the IBM Proprinter / Epson Hi res Swiss 10 point font.
+|IBM Proprinter / Epson Hi Res (120x144 dots/inch) Swiss 14 Point
+EPSHSS14
+GEM DEVICE DRIVER DISK #3
+[1f,9f]
+This is the IBM Proprinter / Epson Hi res Swiss 14 point font.
+|IBM Proprinter / Epson Hi Res (120x144 dots/inch) Swiss 20 Point
+EPSHSS20
+GEM DEVICE DRIVER DISK #3
+[1f,9f]
+This is the IBM Proprinter / Epson Hi res Swiss 20 point font.
+|IBM Proprinter / Epson Hi Res (120x144 dots/inch) Swiss 28 Point
+EPSHSS28
+GEM DEVICE DRIVER DISK #3
+[1f,9f]
+This is the IBM Proprinter / Epson Hi res Swiss 28 point font.
+|IBM Proprinter / Epson Hi Res (120x144 dots/inch) Swiss 36 Point
+EPSHSS36
+GEM DEVICE DRIVER DISK #3
+[1f,9f]
+This is the IBM Proprinter / Epson Hi res Swiss 36 point font.
+|IBM Proprinter / Epson Hi Res (120x144 dots/inch) Dutch 7 Point
+EPSHTR07
+GEM DEVICE DRIVER DISK #3
+[1,9]
+This is the IBM Proprinter / Epson Hi res Dutch 7 point font.
+|IBM Proprinter / Epson Hi Res (120x144 dots/inch) Dutch 10 Point
+EPSHTR10
+GEM DEVICE DRIVER DISK #3
+[1,9]
+This is the IBM Proprinter / Epson Hi res Dutch 10 point font.
+|IBM Proprinter / Epson Hi Res (120x144 dots/inch) Dutch 14 Point
+EPSHTR14
+GEM DEVICE DRIVER DISK #3
+[1,9]
+This is the IBM Proprinter / Epson Hi res Dutch 14 point font.
+|IBM Proprinter / Epson Hi Res (120x144 dots/inch) Dutch 20 Point
+EPSHTR20
+GEM DEVICE DRIVER DISK #3
+[1,9]
+This is the IBM Proprinter / Epson Hi res Dutch 20 point font.
+|IBM Proprinter / Epson Hi Res (120x144 dots/inch) Dutch 28 Point
+EPSHTR28
+GEM DEVICE DRIVER DISK #3
+[1,9]
+This is the IBM Proprinter / Epson Hi res Dutch 28 point font.
+|IBM Proprinter / Epson Hi Res (120x144 dots/inch) Dutch 36 Point
+EPSHTR36
+GEM DEVICE DRIVER DISK #3
+[1,9]
+This is the IBM Proprinter / Epson Hi res Dutch 36 point font.
+|Epson Lo Res (60x72 dots/inch) Swiss 10 Point
+EPSLSS10
+GEM DEVICE DRIVER DISK #4
+[2f]
+This is the Epson Lo res 60x72 dots/inch Swiss 10 point font.
+|EPSON Lo Res (60x72 dots/inch) Swiss 14 Point
+EPSLSS14
+GEM DEVICE DRIVER DISK #4
+[2f]
+This is the Epson Lo res 60x72 dots/inch Swiss 14 point font.
+|EPSON Lo Res (60x72 dots/inch) Swiss 20 Point
+EPSLSS20
+GEM DEVICE DRIVER DISK #4
+[2f]
+This is the Epson Lo res 60x72 dots/inch Swiss 20 point font.
+|EPSON Lo Res (60x72 dots/inch) Swiss 28 Point
+EPSLSS28
+GEM DEVICE DRIVER DISK #4
+[2f]
+This is the Epson Lo res 60x72 dots/inch Swiss 28 point font.
+|EPSON Lo Res (60x72 dots/inch) Swiss 36 Point
+EPSLSS36
+GEM DEVICE DRIVER DISK #4
+[2f]
+This is the Epson Lo res 60x72 dots/inch Swiss 36 point font.
+|EPSON Lo Res (60x72 dots/inch) Dutch 10 Point
+EPSLTR10
+GEM DEVICE DRIVER DISK #4
+[2]
+This is the Epson Lo res 60x72 dots/inch Dutch 10 point font.
+|EPSON Lo Res (60x72 dots/inch) Dutch 14 Point
+EPSLTR14
+GEM DEVICE DRIVER DISK #4
+[2]
+This is the Epson Lo res 60x72 dots/inch Dutch 14 point font.
+|EPSON Lo Res (60x72 dots/inch) Dutch 20 Point
+EPSLTR20
+GEM DEVICE DRIVER DISK #4
+[2]
+This is the Epson Lo res 60x72 dots/inch Dutch 20 point font.
+|EPSON Lo Res (60x72 dots/inch) Dutch 28 Point
+EPSLTR28
+GEM DEVICE DRIVER DISK #4
+[2]
+This is the Epson Lo res 60x72 dots/inch Dutch 28 point font.
+|EPSON Lo Res (60x72 dots/inch) Dutch 36 Point
+EPSLTR36
+GEM DEVICE DRIVER DISK #4
+[2]
+This is the Epson Lo res 60x72 dots/inch Dutch 36 point font.
+|IBM Color Ink Jet (100x96 dots/inch) Swiss 10 Point
+IBMISS10
+GEM DEVICE DRIVER DISK #1
+[3f]
+This is the IBM Color Ink Jet Swiss 10 point font.
+|IBM Color Ink Jet (100x96 dots/inch) Swiss 14 Point
+IBMISS14
+GEM DEVICE DRIVER DISK #1
+[3f]
+This is the IBM Color Ink Jet Swiss 14 point font.
+|IBM Color Ink Jet (100x96 dots/inch) Swiss 20 Point
+IBMISS20
+GEM DEVICE DRIVER DISK #1
+[3f]
+This is the IBM Color Ink Jet Swiss 20 point font.
+|IBM Color Ink Jet (100x96 dots/inch) Swiss 28 Point
+IBMISS28
+GEM DEVICE DRIVER DISK #1
+[3f]
+This is the IBM Color Ink Jet Swiss 28 point font.
+|IBM Color Ink Jet (100x96 dots/inch) Swiss 36 Point
+IBMISS36
+GEM DEVICE DRIVER DISK #1
+[3f]
+This is the IBM Color Ink Jet Swiss 36 point font.
+|IBM Color Ink Jet (100x96 dots/inch) Dutch 7 Point
+IBMITR07
+GEM DEVICE DRIVER DISK #1
+[3]
+This is the IBM Color Ink Jet Dutch 7 point font.
+|IBM Color Ink Jet (100x96 dots/inch) Dutch 10 Point
+IBMITR10
+GEM DEVICE DRIVER DISK #1
+[3]
+This is the IBM Color Ink Jet Dutch 10 point font.
+|IBM Color Ink Jet (100x96 dots/inch) Dutch 14 Point
+IBMITR14
+GEM DEVICE DRIVER DISK #1
+[3]
+This is the IBM Color Ink Jet Dutch 14 point font.
+|IBM Color Ink Jet (100x96 dots/inch) Dutch 20 Point
+IBMITR20
+GEM DEVICE DRIVER DISK #1
+[3]
+This is the IBM Color Ink Jet Dutch 20 point font.
+|IBM Color Ink Jet (100x96 dots/inch) Dutch 28 Point
+IBMITR28
+GEM DEVICE DRIVER DISK #1
+[3]
+This is the IBM Color Ink Jet Dutch 28 point font.
+|IBM Color Ink Jet (100x96 dots/inch) Dutch 36 Point
+IBMITR36
+GEM DEVICE DRIVER DISK #1
+[3]
+This is the IBM Color Ink Jet Dutch 36 point font.
+|Xerox 4020 (120x240 dots/inch) Swiss 7 Point
+XERHSS07
+GEM DEVICE DRIVER DISK #3
+[4f]
+This is the Xerox 4020 120x240 Swiss 7 point font.
+|Xerox 4020 (120x240 dots/inch) Swiss 10 Point
+XERHSS10
+GEM DEVICE DRIVER DISK #3
+[4f]
+This is the Xerox 4020 120x240 Swiss 10 point font.
+|Xerox 4020 (120x240 dots/inch) Swiss 14 Point
+XERHSS14
+GEM DEVICE DRIVER DISK #3
+[4f]
+This is the Xerox 4020 120x240 dots/inch Swiss 14 point font.
+|Xerox 4020 (120x240 dots/inch) Swiss 20 Point
+XERHSS20
+GEM DEVICE DRIVER DISK #3
+[4f]
+This is the Xerox 4020 120x240 dots/inch Swiss 20 point font.
+|Xerox 4020 (120x240 dots/inch) Swiss 28 Point
+XERHSS28
+GEM DEVICE DRIVER DISK #3
+[4f]
+This is the Xerox 4020 120x240 dots/inch Swiss 28 point font.
+|Xerox 4020 (120x240 dots/inch) Swiss 36 Point
+XERHSS36
+GEM DEVICE DRIVER DISK #3
+[4f]
+This is the Xerox 4020 120x240 dots/inch Swiss 36 point font.
+|Epson LQ Series (180x180 dots/inch) Swiss 7 Point
+HPLMSS07
+GEM DEVICE DRIVER DISK #4
+[5f]
+This is the Epson LQ Series 180x180 dots/inch Swiss 7
+point font.
+|Epson LQ Series (180x180 dots/inch) Swiss 10 Point
+HPLMSS10
+GEM DEVICE DRIVER DISK #4
+[5f]
+This is the Epson LQ Series 180x180 dots/inch Swiss 10
+point font.
+|Epson LQ Series (180x180 dots/inch) Swiss 14 Point
+HPLMSS14
+GEM DEVICE DRIVER DISK #4
+[5f]
+This is the Epson LQ Series 180x180 dots/inch Swiss 14
+point font.
+|Epson LQ Series (180x180 dots/inch) Swiss 20 Point
+HPLMSS20
+GEM DEVICE DRIVER DISK #4
+[5f]
+This is the Epson LQ Series 180x180 dots/inch Swiss 20
+point font.
+|Epson LQ Series (180x180 dots/inch) Swiss 28 Point
+HPLMSS28
+GEM DEVICE DRIVER DISK #4
+[5f]
+This is the Epson LQ Series 180x180 dots/inch Swiss 28
+point font.
+|Epson LQ Series (180x180 dots/inch) Swiss 36 Point
+HPLMSS36
+GEM DEVICE DRIVER DISK #4
+[5f]
+This is the Epson LQ Series 180x180 dots/inch Swiss 36
+point font.
+|Epson LQ Series (180x180 dots/inch) Dutch 7 Point
+HPLMTR07
+GEM DEVICE DRIVER DISK #4
+[5]
+This is the Epson LQ Series 180x180 dots/inch Dutch 7
+point font.
+|Epson LQ Series (180x180 dots/inch) Dutch 10 Point
+HPLMTR10
+GEM DEVICE DRIVER DISK #4
+[5]
+This is the Epson LQ Series 180x180 dots/inch Dutch 10
+point font.
+|Epson LQ Series (180x180 dots/inch) Dutch 14 Point
+HPLMTR14
+GEM DEVICE DRIVER DISK #4
+[5]
+This is the Epson LQ Series 180x180 dots/inch Dutch 14
+point font.
+|Epson LQ Series (180x180 dots/inch) Dutch 20 Point
+HPLMTR20
+GEM DEVICE DRIVER DISK #4
+[5]
+This is the Epson LQ Series 180x180 dots/inch Dutch 20
+point font.
+|Epson LQ Series (180x180 dots/inch) Dutch 28 Point
+HPLMTR28
+GEM DEVICE DRIVER DISK #4
+[5]
+This is the Epson LQ Series 180x180 dots/inch Dutch 28
+point font.
+|Epson LQ Series (180x180 dots/inch) Dutch 36 Point
+HPLMTR36
+GEM DEVICE DRIVER DISK #4
+[5]
+This is the Epson LQ Series 180x180 dots/inch Dutch 36
+point font.
+|HP LaserJet+ (150 x 150 dots/inch) Swiss 7 Point
+HPLMSS07
+GEM DEVICE DRIVER DISK #4
+[6f]
+This is the Hewlett Packard LaserJet+ 150 x 150 dots/inch Swiss 7
+point font.
+|HP LaserJet+ (150 x 150 dots/inch) Swiss 10 Point
+HPLMSS10
+GEM DEVICE DRIVER DISK #4
+[6f]
+This is the Hewlett Packard LaserJet+ 150 x 150 dots/inch Swiss 10
+point font.
+|HP LaserJet+ (150 x 150 dots/inch) Swiss 14 Point
+HPLMSS14
+GEM DEVICE DRIVER DISK #4
+[6f]
+This is the Hewlett Packard LaserJet+ 150 x 150 dots/inch Swiss 14
+point font.
+|HP LaserJet+ (150 x 150 dots/inch) Swiss 20 Point
+HPLMSS20
+GEM DEVICE DRIVER DISK #4
+[6f]
+This is the Hewlett Packard LaserJet+ 150 x 150 dots/inch Swiss 20
+point font.
+|HP LaserJet+ (150 x 150 dots/inch) Swiss 28 Point
+HPLMSS28
+GEM DEVICE DRIVER DISK #4
+[6f]
+This is the Hewlett Packard LaserJet+ 150 x 150 dots/inch Swiss 28
+point font.
+|HP LaserJet+ (150 x 150 dots/inch) Swiss 36 Point
+HPLMSS36
+GEM DEVICE DRIVER DISK #4
+[6f]
+This is the Hewlett Packard LaserJet+ 150 x 150 dots/inch Swiss 36
+point font.
+|HP LaserJet+ (150 x 150 dots/inch) Dutch 7 Point
+HPLMTR07
+GEM DEVICE DRIVER DISK #4
+[6]
+This is the Hewlett Packard LaserJet+ 150 x 150 dots/inch Dutch 7
+point font.
+|HP LaserJet+ (150 x 150 dots/inch) Dutch 10 Point
+HPLMTR10
+GEM DEVICE DRIVER DISK #4
+[6]
+This is the Hewlett Packard LaserJet+ 150 x 150 dots/inch Dutch 10
+point font.
+|HP LaserJet+ (150 x 150 dots/inch) Dutch 14 Point
+HPLMTR14
+GEM DEVICE DRIVER DISK #4
+[6]
+This is the Hewlett Packard LaserJet+ 150 x 150 dots/inch Dutch 14
+point font.
+|HP LaserJet+ (150 x 150 dots/inch) Dutch 20 Point
+HPLMTR20
+GEM DEVICE DRIVER DISK #4
+[6]
+This is the Hewlett Packard LaserJet+ 150 x 150 dots/inch Dutch 20
+point font.
+|HP LaserJet+ (150 x 150 dots/inch) Dutch 28 Point
+HPLMTR28
+GEM DEVICE DRIVER DISK #4
+[6]
+This is the Hewlett Packard LaserJet+ 150 x 150 dots/inch Dutch 28
+point font.
+|HP LaserJet+ (150 x 150 dots/inch) Dutch 36 Point
+HPLMTR36
+GEM DEVICE DRIVER DISK #4
+[6]
+This is the Hewlett Packard LaserJet+ 150 x 150 dots/inch Dutch 36
+point font.
+>PRINTER PORT
+xx
+xx
+|Printer Parallel Port #1 ( LPT1: )
+0
+|Printer Parallel Port #2 ( LPT2: )
+1
+|Printer Serial Port #1 ( COM1: )
+80
+|Printer Serial Port #2 ( COM2: )
+90
+>METAFILES
+31
+40
+|Metafile;GEM File
+META7
+GEM DEVICE DRIVER DISK #1
+[1]
+
+
+This driver produces a file of GEM commands.  This GEM file can be
+used to transfer graphics information from one program to another
+program.  The receiving program must have a GEM file reader
+implemented in it.
+>CAMERAS
+41
+50
+>CAMERA FONTS
+xx
+xx
+>CAMERA PORTS
+xx
+xx
+|Camera Serial Port #1 ( COM1: )
+80
+|Camera Serial Port #2 ( COM2: )
+81
+>TABLETS
+51
+60
+>TABLET PORT
+xx
+xx
+>MISCELLANEOUS
+61
+70
+>±	uƒÆ2À¢ê¢é­èû¢èV+ÑàÅ6,ð6÷& t6‹(Ø‹6¢ê6ˆ&é­‹Ð­+Âué› ‹ð‹ÂUŽàŒâ‹>Ö‰>Þ‹Þ÷Š u’ƒÃÑëÑëÑëè.÷Š tè‹†‹Ö÷Š tèÂ66Ž÷Š tè“6Œ÷€öööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööö@METAFILE
+{
+|FILENAME|MDGEM8.SYS
+}
+@SCREEN
+{
+|DESCRIPTION|AT&T DEB Card 16-Color Display (640x400) 
+|SHORT DESCR|AT&T 16 Clr
+|FILENAME|SDDEB8.EGA
+|SRC DISK|GEM SCREEN DISK #1
+|FNT WILDCRD|*.EGA
+|LONG DESCRP|
+Choose this entry if the AT&T DEB Graphics adapter card and 16-
+color display are installed in your computer.  This display 
+offers a resolution of 640 horizontal by 400 vertical pixels.
+}
+{
+|DESCRIPTION|AT&T Monochrome Card (640x400)
+|SHORT DESCR|AT&T Mono
+|FILENAME|SDATT8.EGA
+|SRC DISK|GEM SCREEN DISK #1
+|FNT WILDCRD|*.EGA
+|LONG DESCRP|
+Choose this entry if your computer is an AT&T PC equipped with 
+its native graphics adapter card and monochrome display.  This 
+display offers a resolution of 640 horizontal by 400 vertical 
+pixels.
+}
+{
+|DESCRIPTION|Hercules Card / Monochrome PC Display (720x348)
+|SHORT DESCR|Hercules
+|FILENAME|SDHRC8.EGA
+|SRC DISK|GEM SCREEN DISK #1
+|FNT WILDCRD|*.EGA
+|LONG DESCRP|
+Choose this entry if the Hercules Graphics Card and Monochrome PC 
+Display are installed in your computer.  This display offers a 
+resolution of 720 horizontal by 348 vertical pixels.
+}
+{
+|DESCRIPTION|IBM CGA / Color Display (640x200) - Mono Mode
+|SHORT DESCR|IBM CGA
+|FILENAME|SDCGA8.CGA
+|SRC DISK|GEM SCREEN DISK #2
+|FONT DISK|GEM PRINTER DISK #1
+|FNT WILDCRD|*.CGA
+|LONG DESCRP|
+Choose this entry if your computer is a Compaq or other 100% IBM-
+compatible computer equipped with an IBM Color Graphics Adapter 
+(CGA) card and color display, which you intend to use in 
+monochrome mode.  This display offers a resolution of 640 
+horizontal by 200 vertical pixels.
+}
+{
+|DESCRIPTION|IBM EGA / Monochrome Display (640x350)
+|SHORT DESCR|EGA Mono
+|FILENAME|SDEH18.EGA
+|SRC DISK|GEM SCREEN DISK #1
+|FNT WILDCRD|*.EGA
+|LONG DESCRP|
+Choose this entry if the IBM Enhanced Graphics Adapter (EGA) card 
+and the IBM monochrome display are installed on your computer, or 
+if you intend to use your EGA display in monochrome mode. This 
+display offers a resolution of 640 horizontal by 350 vertical 
+pixels. 
+}
+{
+|DESCRIPTION|IBM Enhanced Card & 16-Color Display (640x350)
+|SHORT DESCR|EGA HiRes 16
+|FILENAME|SDEHF8.EGA
+|SRC DISK|GEM SCREEN DISK #1
+|FNT WILDCRD|*.EGA
+|LONG DESCRP|
+Choose this entry if your system is equipped with an IBM Enhanced 
+Graphics Adapter card, with at least 128K of graphics memory on 
+the card, and an IBM enhanced color display.  This 16-color 
+display offers a resolution of 640 horizontal by 350 vertical 
+pixels.
+}
+{
+|DESCRIPTION|IBM 16-Color VGA for PS/2 (640x480) or Compatible
+|SHORT DESCR|VGA color
+|FILENAME|SDPSC8.VGA
+|SRC DISK|GEM SCREEN DISK #2
+|FNT WILDCRD|*.VGA
+|LONG DESCRP|
+Choose this entry if you are using a Personal System/2 computer 
+with an IBM PS/2 16-color VGA card.  This display offers a 
+resolution of 640 horizontal by 480 vertical pixels.
+}
+{
+|DESCRIPTION|IBM VGA Monochrome for the PS/2 (640x480) or Compatible
+|SHORT DESCR|VGA mono     
+|FILENAME|SDPSM8.VGA
+|SRC DISK|GEM SCREEN DISK #2
+|FNT WILDCRD|*.VGA
+|LONG DESCRP|
+Choose this entry if you are using the IBM Personal System/2 with 
+an IBM PS/2 VGA monochrome card.  This monochrome display offers a 
+resolution of 640 horizontal by 480 vertical pixels.
+}
+{
+|DESCRIPTION|MDS THE GENIUS Monitor / THE GENIUS Monitor Card (728x1008)
+|SHORT DESCR|Genius
+|FILENAME|SDGEN8.VGA
+|SRC DISK|GEM SCREEN DISK #2
+|FNT WILDCRD|*.VGA
+|LONG DESCRP|
+Choose this entry if you are using THE GENIUS Monitor and THE GENIUS 
+Monitor Card by Micro Display Systems.  This monochrome display 
+offers a resolution of 728 horizontal by 1008 vertical pixels.
+}
+{
+|DESCRIPTION|VGA/16 Adapter (800x600) 16-Color Mode
+|SHORT DESCR|VGA 800
+|FILENAME|SD800.VGA
+|SRC DISK|VGA/16 ADAPTER DRIVER DISKETTE 2
+|FNT WILDCRD|*.VGA
+|LONG DESCRP|
+Choose this entry if you are using an extended VGA Adapter.
+This color display driver offers a resolution of 800 horizontal
+by 600 vertical pixels in 16 colors.
+}
+{
+|DESCRIPTION|VGA/16 Adapter (1024x768) 16-Color Mode
+|SHORT DESCR|VGA 1024
+|FILENAME|SD1024.VGA
+|SRC DISK|VGA/16 ADAPTER DRIVER DISKETTE 2
+|FNT WILDCRD|*.VGA
+|LONG DESCRP|
+Choose this entry if you are using an extended VGA Adapter.
+This color display driver offers a resolution of 1024 horizontal
+by 768 vertical pixels in 16 colors.
+}
+{
+|DESCRIPTION|Video 7 Vega Deluxe / Quadram Prosync 16-Color Display (640x480) 
+|SHORT DESCR|Prosync 640
+|FILENAME|SDP648.VGA
+|SRC DISK|GEM SCREEN DISK #2
+|FNT WILDCRD|*.VGA
+|LONG DESCRP|
+Choose this entry if your computer is equipped with the Quadram 
+Prosync 16-color display and Video 7 Vega Deluxe card.  The display 
+offers a resolution of 640 horizontal by 480 vertical pixels.
+}
+{
+|DESCRIPTION|Video 7 Vega Deluxe / Quadram Prosync 16-Color Display (752x410) 
+|SHORT DESCR|Prosync 752
+|FILENAME|SDP758.EGA
+|SRC DISK|GEM SCREEN DISK #1
+|FNT WILDCRD|*.EGA
+|LONG DESCRP|
+Choose this entry if your computer is equipped with the Quadram 
+Prosync 16-color display and Video 7 Vega Deluxe card.  The 
+display offers a resolution of 752 horizontal by 410 vertical 
+pixels.
+}
+{
+|DESCRIPTION|Wyse/Amdek Monochrome Graphics Display (1280x800)
+|SHORT DESCR|Wyse/Amdek
+|FILENAME|SDWYS8.VGA
+|SRC DISK|GEM SCREEN DISK #2
+|FNT WILDCRD|*.VGA
+|LONG DESCRP|
+Choose this entry if you are using a Wyse or Amdek display and card. 
+This monochrome display offers a resolution of 1280 horizontal by 
+800 vertical pixels.
+}
+@PRINTER
+{
+|DESCRIPTION|Epson GQ-3500 Laser Printer (300 x 300 Dots/Inch)
+|SHORT DESCR|EPSON GQ 3500
+|FILENAME|PDEGH8.B30
+|FNT WILDCRD|*.B30
+|AUX FILE|EGH.ATM
+|SRC DISK|GEM PRINTER DISK #3
+|LONG DESCRP|
+Choose this entry if you are using the Epson GQ-3500 Laser 
+printer.  This printer offers a print resolution of 300 x 300 
+dots per inch. 
+}
+{
+|DESCRIPTION|Epson LQ Series Printers (180 x 180 Dots/Inch)
+|SHORT DESCR|Epson LQ
+|FILENAME|PDELQ8.ELQ
+|SRC DISK|GEM PRINTER DISK #1
+|AUX FILE|ELQ.ATM
+|FONT DISK|GEM PRINTER DISK #2
+|FNT WILDCRD|*.ELQ
+|LONG DESCRP|
+Choose this entry if you are using an Epson LQ-Series printer.  
+LQ-Series printers offer a print resolution of 180 x 180 
+dots per inch.
+}
+{
+|DESCRIPTION|Hewlett Packard Laserjet II Printer (300 x 300 Dots/Inch)
+|SHORT DESCR|HP Laser II
+|FILENAME|PDHPU8.B30
+|SRC DISK|GEM PRINTER DISK #3
+|FNT WILDCRD|*.B30
+|LONG DESCRP|
+Choose this entry if you are using a Hewlett Packard Laserjet 
+II printer.  This printer offers a print resolution of 300 x 300 
+dots per inch.
+}
+{
+|DESCRIPTION|Hewlett Packard LaserJet+ (150 x 150 Dots/Inch)
+|SHORT DESCR|HP Laserjet+
+|FILENAME|PDHPH8.HPH
+|FNT WILDCRD|*.HPH
+|SRC DISK|GEM PRINTER DISK #3
+|FONT DISK|GEM PRINTER DISK #1
+|LONG DESCRP|
+Choose this entry if you are using a Hewlett Packard LaserJet+ 
+printer.  This printer offers a resolution of 150 x 150 dots per 
+inch. 
+}
+{
+|DESCRIPTION|IBM/Epson High Resolution Printers (120 x 144 Dots/Inch)
+|SHORT DESCR|IBM/Epson Hi
+|FILENAME|PDEHI8.EPS
+|SRC DISK|GEM PRINTER DISK #1
+|AUX FILE|EHI.ATM
+|FNT WILDCRD|*.EPS
+|LONG DESCRP|
+Choose this entry if you are using an IBM Graphics printer, the 
+Epson FX 80/100, or the Epson MX 80/100.  These printers offer a
+resolution of 120 x 144 dots per inch. 
+}
+{
+|DESCRIPTION|IBM Proprinter (120 x 144 Dots/Inch)
+|SHORT DESCR|Proprinter
+|FILENAME|PDPRO8.EPS
+|SRC DISK|GEM PRINTER DISK #1
+|AUX FILE|PRO.ATM
+|FNT WILDCRD|*.EPS
+|LONG DESCRP|
+Choose this entry if you are using the IBM Proprinter.  This printer 
+offers 120 x 144 dots per inch print resolution. 
+}
+{
+|DESCRIPTION|LaserWriter / Postscript Printers
+|SHORT DESCR|Postscrpt 12
+|FILENAME|PDPST8.SYS
+|SRC DISK|GEM PRINTER DISK #2
+|AUX FILE|PSTV23.PRE;PSTV23.CNF
+|LONG DESCRP|
+Choose this entry if you are using a printer that uses Postscript-type 
+files and the standard Adobe resident font set: Courier, Helvetica, 
+Times, and Symbol.
+}
+{
+|DESCRIPTION|LaserWriter Plus / Postscript Printers
+|SHORT DESCR|Postscrpt 35
+|FILENAME|PDPST8.SYS
+|SRC DISK|GEM PRINTER DISK #2
+|AUX FILE|PST.PRE;PST.CNF
+|LONG DESCRP|
+Choose this entry if you are using a printer that uses 
+Postscript-type files and has the extended Adobe resident font 
+set: Bookman, Zapf-Chancery, etc. in addition to the standard
+resident font set: Courier, Helvetica, Times, and Symbol.
+}
+{
+|DESCRIPTION|Toshiba P321, P341, or P351 Printer (180 x 180 Dots/Inch)
+|SHORT DESCR|Toshiba
+|FILENAME|PDTSH8.ELQ
+|FNT WILDCRD|*.ELQ
+|AUX FILE|TSH.ATM
+|SRC DISK|GEM PRINTER DISK #2
+|LONG DESCRP|
+Choose this entry if you are using a Toshiba 321,341, or 351 
+printer.  Each of these printers offers a print resolution of 180 
+x 180 dots per inch.
+}
+{
+|DESCRIPTION|Xerox 4020 Color Ink Jet (120 x 240 Dots/Inch) 
+|SHORT DESCR|XEROX 4020
+|FILENAME|PDX208.X20
+|SRC DISK|GEM PRINTER DISK #2
+|AUX FILE|X20.ATM
+|FNT WILDCRD|*.X20
+|LONG DESCRP|
+Choose this entry if you are using the Xerox eight-color printer.  
+This printer offers a print resolution of 120 x 240 dots per 
+inch.
+}
+@MOUSE
+{
+|DESCRIPTION|No Mouse
+|MOUSE ID|0
+|LONG DESCRP|
+Choose this entry if your computer is not equipped with a mouse.  
+Instead of a mouse, you use the cursor control keys to perform 
+operations such as cursor movement, dragging, and clicking.  For 
+details on cursor key techniques, refer to the Desktop Keyboard 
+Reference card at the back of the GEM Desktop manual.  Mouse 
+techniques are explained in the GEM Desktop user's guide.
+}
+{
+|DESCRIPTION|Bus Mouse (Requires file MOUSE.COM )
+|MOUSE ID|2
+|LONG DESCRP|
+Choose this entry if you are using a bus-type mouse.  This type 
+of mouse connects to a special hardware board in your computer 
+and requires that the file MOUSE.COM be contained either on your 
+DOS boot disk or in the root directory of your hard disk.  Any 
+mouse that uses MOUSE.COM, including the Microsoft, Logitech, 
+AT&T, HP Vectra, and Xerox 6065 mice, can be used as a bus-type 
+mouse.  Refer to the mouse manufacturer's installation 
+instructions.  For further information on .COM files, refer to 
+your DOS user's guide.
+}
+{
+|DESCRIPTION|IBM Personal System/2 Mouse
+|MOUSE ID|10
+|LONG DESCRP|
+Choose this entry if you are using the IBM Personal System/2 
+mouse.  This mouse connects to the IBM mouse port on your 
+computer.
+}
+{
+|DESCRIPTION|Microsoft Serial Mouse (RS232 )
+|MOUSE ID|3
+|LONG DESCRP|
+Choose this entry only if you are using a Microsoft serial mouse.  
+This mouse connects to one of the serial ports on your computer.
+}
+{
+|DESCRIPTION|Mouse Systems PC Mouse / SummaMouse / Compatibles
+|MOUSE ID|1
+|LONG DESCRP|
+Choose this entry if your mouse is any of the above, or if it is 
+a "generic" mouse.  If you are unsure of the type of mouse you 
+are using, you may find the manufacturer's name and the model 
+indicated on the bottom of the mouse or in your hardware 
+documentation.  If you are unable to determine the name and model 
+of your mouse, most likely you are using a generic serial mouse 
+and should choose this entry.  The mouse connects to one of the 
+serial ports on your computer.  Manager Mouse and the Torrington 
+mouse are also generic serial mice.
+}
+{
+|DESCRIPTION|SummaSketch 961 Cursor-Type Tablet
+|MOUSE ID|7
+|LONG DESCRP|
+Choose this entry if you are using the SummaSketch 9-inch hand 
+cursor-controlled data tablet.  This tablet connects to one of 
+the serial ports on your computer.
+}
+{
+|DESCRIPTION|SummaSketch 961 Stylus-Type Tablet
+|MOUSE ID|6
+|LONG DESCRP|
+Choose this entry if you are using the SummaSketch 9-inch stylus-
+controlled data tablet.  This tablet connects to one of the 
+serial ports on your computer.}
+}
+{
+|DESCRIPTION|SummaSketch 1201 Cursor-Type Tablet
+|MOUSE ID|5
+|LONG DESCRP|
+Choose this entry if you are using the SummaSketch 12-inch hand 
+cursor-controlled data tablet.  This tablet connects to one of 
+the serial ports on your computer.
+}
+{
+|DESCRIPTION|SummaSketch 1201 Stylus-Type Tablet
+|MOUSE ID|4
+|LONG DESCRP|
+Choose this entry if you are using the SummaSketch 12-inch 
+stylus-controlled data tablet.  This tablet connects to one of 
+the serial ports on your computer.
+}
+{
+|DESCRIPTION|Summagraphics MM1812 Cursor-Type Tablet
+|MOUSE ID|9
+|LONG DESCRP|
+Choose this entry if you are using the Summagraphics 18-inch hand 
+cursor-controlled data tablet.  This tablet connects to one of 
+the serial ports on your computer.
+}
+{
+|DESCRIPTION|Summagraphics MM1812 Stylus-Type Tablet
+|MOUSE ID|8
+|LONG DESCRP|
+Choose this entry if you are using the Summagraphics 18-inch 
+stylus-controlled data tablet.  This tablet connects to one of 
+the serial ports on your computer.
+}
+
+PDPRO7
+GEM DEVICE DRIVER DISK #3
+[9b]
+DEVICE=GEMöööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööööö@METAFILE
+{
+|FILENAME|MDGEM9.SYS
+}
+@SCREEN
+{
+|DESCRIPTION|AT&T Monochrome Card (640x400)
+|SHORT DESCR|AT&T Mono
+|FILENAME|SDATT9.EGA
+|SRC DISK|GEM SCREEN DISK #1
+|FNT WILDCRD|*.EGA
+|LONG DESCRP|
+Choose this entry if your computer is an AT&T PC equipped with 
+its native graphics adapter card and monochrome display.  This 
+display offers a resolution of 640 horizontal by 400 vertical 
+pixels.
+}
+{
+|DESCRIPTION|Hercules Card / Monochrome PC Display (720x348)
+|SHORT DESCR|Hercules
+|FILENAME|SDHRC9.EGA
+|SRC DISK|GEM SCREEN DISK #1
+|FNT WILDCRD|*.EGA
+|LONG DESCRP|
+Choose this entry if the Hercules Graphics Card and Monochrome PC 
+Display are installed in your computer.  This display offers a 
+resolution of 720 horizontal by 348 vertical pixels.
+}
+{
+|DESCRIPTION|IBM CGA / Color Display (640x200) - Mono Mode
+|SHORT DESCR|IBM CGA
+|FILENAME|SDCGA9.CGA
+|SRC DISK|GEM SCREEN DISK #1
+|FNT WILDCRD|*.CGA
+|LONG DESCRP|
+Choose this entry if your computer is a Compaq or other 100% IBM-
+compatible computer equipped with an IBM Color Graphics Adapter 
+(CGA) card and color display, which you intend to use in 
+monochrome mode.  This display offers a resolution of 640 
+horizontal by 200 vertical pixels.
+}
+{
+|DESCRIPTION|IBM EGA / Monochrome Display (640x350)
+|SHORT DESCR|EGA Mono
+|FILENAME|SDEH19.EGA
+|SRC DISK|GEM SCREEN DISK #1
+|FNT WILDCRD|*.EGA
+|LONG DESCRP|
+Choose this entry if the IBM Enhanced Graphics Adapter (EGA) card 
+and the IBM monochrome display are installed on your computer, or 
+if you intend to use your EGA display in monochrome mode. This 
+display offers a resolution of 640 horizontal by 350 vertical 
+pixels. 
+}
+{
+|DESCRIPTION|IBM Enhanced Card & 16-Color Display (640x350)
+|SHORT DESCR|EGA HiRes 16
+|FILENAME|SDEHF9.EGA
+|SRC DISK|GEM SCREEN DISK #1
+|FNT WILDCRD|*.EGA
+|LONG DESCRP|
+Choose this entry if your system is equipped with an IBM Enhanced 
+Graphics Adapter card, with at least 128K of graphics memory on 
+the card, and an IBM enhanced color display.  This 16-color 
+display offers a resolution of 640 horizontal by 350 vertical 
+pixels.
+}
+{
+|DESCRIPTION|IBM 16-Color VGA for PS/2 (640x480) or Compatible
+|SHORT DESCR|VGA color
+|FILENAME|SDPSC9.VGA
+|SRC DISK|GEM SCREEN DISK #2
+|FNT WILDCRD|*.VGA
+|LONG DESCRP|
+Choose this entry if you are using a Personal System/2 computer 
+with an IBM PS/2 16-color VGA card.  This display offers a 
+resolution of 640 horizontal by 480 vertical pixels.
+}
+{
+|DESCRIPTION|IBM VGA Monochrome for the PS/2 (640x480) or Compatible
+|SHORT DESCR|VGA mono     
+|FILENAME|SDPSM9.VGA
+|SRC DISK|GEM SCREEN DISK #2
+|FNT WILDCRD|*.VGA
+|LONG DESCRP|
+Choose this entry if you are using the IBM Personal System/2 with 
+an IBM PS/2 VGA monochrome card.  This monochrome display offers a 
+resolution of 640 horizontal by 480 vertical pixels.
+}
+{
+|DESCRIPTION|MDS THE GENIUS Monitor / THE GENIUS Monitor Card (728x1008)
+|SHORT DESCR|Genius
+|FILENAME|SDGEN9.VGA
+|SRC DISK|GEM SCREEN DISK #2
+|FNT WILDCRD|*.VGA
+|LONG DESCRP|
+Choose this entry if you are using THE GENIUS Monitor and THE GENIUS 
+Monitor Card by Micro Display Systems.  This monochrome display 
+offers a resolution of 728 horizontal by 1008 vertical pixels.
+}
+{
+|DESCRIPTION|VGA/16 Adapter (800x600) 16-Color Mode
+|SHORT DESCR|VGA 800
+|FILENAME|SD800.VGA
+|SRC DISK|VGA/16 ADAPTER DRIVER DISKETTE 2
+|FNT WILDCRD|*.VGA
+|LONG DESCRP|
+Choose this entry if you are using an extended VGA Adapter.
+This color display driver offers a resolution of 800 horizontal
+by 600 vertical pixels in 16 colors.
+}
+{
+|DESCRIPTION|VGA/16 Adapter (1024x768) 16-Color Mode
+|SHORT DESCR|VGA 1024
+|FILENAME|SD1024.VGA
+|SRC DISK|VGA/16 ADAPTER DRIVER DISKETTE 2
+|FNT WILDCRD|*.VGA
+|LONG DESCRP|
+Choose this entry if you are using an extended VGA Adapter.
+This color display driver offers a resolution of 1024 horizontal
+by 768 vertical pixels in 16 colors.
+}
+{
+|DESCRIPTION|Video 7 Vega Deluxe / Quadram Prosync 16-Color Display (640x480) 
+|SHORT DESCR|Prosync 640
+|FILENAME|SDP649.VGA
+|SRC DISK|GEM SCREEN DISK #2
+|FNT WILDCRD|*.VGA
+|LONG DESCRP|
+Choose this entry if your computer is equipped with the Quadram 
+Prosync 16-color display and Video 7 Vega Deluxe card.  The display 
+offers a resolution of 640 horizontal by 480 vertical pixels.
+}
+{
+|DESCRIPTION|Wyse/Amdek Monochrome Graphics Display (1280x800)
+|SHORT DESCR|Wyse/Amdek
+|FILENAME|SDWYS9.VGA
+|SRC DISK|GEM SCREEN DISK #2
+|FNT WILDCRD|*.VGA
+|LONG DESCRP|
+Choose this entry if you are using a Wyse or Amdek display and card. 
+This monochrome display offers a resolution of 1280 horizontal by 
+800 vertical pixels.
+}
+@PRINTER
+{
+|DESCRIPTION|Epson LQ Series Printers (180 x 180 Dots/Inch)
+|SHORT DESCR|Epson LQ
+|FILENAME|PDELQ9.ELQ
+|SRC DISK|GEM PRINTER DISK #1
+|AUX FILE|ELQ.ATM;PRTRERR.STR
+|FONT DISK|GEM PRINTER DISK #2
+|FNT WILDCRD|*.ELQ
+|LONG DESCRP|
+Choose this entry if you are using an Epson LQ-Series printer.  
+LQ-Series printers offer a print resolution of 180 x 180 
+dots per inch.
+}
+{
+|DESCRIPTION|HP Laserjet Series II Printer (300 x 300 Dots/Inch)
+|SHORT DESCR|HP Laser 300
+|FILENAME|PDHPU9.SYS
+|SRC DISK|GEM PRINTER DISK #1
+|AUX FILE|HPU.ATM;HPU.CNF;PRTRERR.STR
+|LONG DESCRP|
+Choose this entry if you are using a Hewlett Packard Laserjet
+Series II printer.  This printer offers a print resolution of
+300 x 300 dots per inch.
+}
+{
+|DESCRIPTION|HP LaserJet+ Printer (150 x 150 Dots/Inch)
+|SHORT DESCR|HP Laser 150
+|FILENAME|PDHPH9.SYS
+|SRC DISK|GEM PRINTER DISK #1
+|AUX FILE|HPH.ATM;HPH.CNF;PRTRERR.STR
+|LONG DESCRP|
+Choose this entry if you are using a Hewlett Packard LaserJet+ 
+printer.  This printer offers a resolution of 150 x 150 dots per 
+inch. 
+}
+{
+|DESCRIPTION|IBM/Epson High Resolution Printers (120 x 144 Dots/Inch)
+|SHORT DESCR|IBM/Epson Hi
+|FILENAME|PDEHI9.EPS
+|SRC DISK|GEM PRINTER DISK #1
+|AUX FILE|EHI.ATM;PRTRERR.STR
+|FNT WILDCRD|*.EPS
+|LONG DESCRP|
+Choose this entry if you are using an IBM Graphics printer, the 
+Epson FX 80/100, or the Epson MX 80/100.  These printers offer a
+resolution of 120 x 144 dots per inch. 
+}
+{
+|DESCRIPTION|IBM Proprinter (120 x 144 Dots/Inch)
+|SHORT DESCR|Proprinter
+|FILENAME|PDPRO9.EPS
+|SRC DISK|GEM PRINTER DISK #1
+|AUX FILE|PRO.ATM;PRTRERR.STR
+|FNT WILDCRD|*.EPS
+|LONG DESCRP|
+Choose this entry if you are using the IBM Proprinter.  This printer 
+offers 120 x 144 dots per inch print resolution. 
+}
+{
+|DESCRIPTION|HP Paintjet Printer (180 x 180 Dots/Inch) 8 colors
+|SHORT DESCR|HP Paintjet
+|FILENAME|PDHPJ9.ELQ
+|SRC DISK|GEM PRINTER DISK #2
+|AUX FILES|HPJ.ATM;PRTRERR.STR
+|FNT WILDCRD|*.ELQ
+|LONG DESCRP|
+Choose this entry if you have an HP Paintjet printer.  This printer
+offers 8 colors and a resolution of 180 x 180 dots per inch.
+}
+{
+|DESCRIPTION|Postscript / Laserwriter Printers
+|SHORT DESCR|Postscript
+|FILENAME|PDPST9.SYS
+|SRC DISK|GEM PRINTER DISK #2
+|AUX FILE|PST.CNF;PS2.PRE;PRTRERR.STR
+|LONG DESCRP|
+Choose this entry if you are using a printer that uses Postscript
+as its graphics language.
+}
+{
+|DESCRIPTION|Toshiba P321, P341, or P351 Printer (180 x 180 Dots/Inch)
+|SHORT DESCR|Toshiba
+|FILENAME|PDTSH9.ELQ
+|FNT WILDCRD|*.ELQ
+|AUX FILE|TSH.ATM;PRTRERR.STR
+|SRC DISK|GEM PRINTER DISK #2
+|LONG DESCRP|
+Choose this entry if you are using a Toshiba 321,341, or 351 
+printer.  Each of these printers offers a print resolution of 180 
+x 180 dots per inch.
+}
+@MOUSE
+{
+|DESCRIPTION|No Mouse
+|MOUSE ID|0
+|LONG DESCRP|
+Choose this entry if your computer is not equipped with a mouse.  
+Instead of a mouse, you use the cursor control keys to perform 
+operations such as cursor movement, dragging, and clicking.  For 
+details on cursor key techniques, refer to the Desktop Keyboard 
+Reference card at the back of the GEM Desktop manual.  Mouse 
+techniques are explained in the GEM Desktop user's guide.
+}
+{
+|DESCRIPTION|Bus Mouse (Requires file MOUSE.COM )
+|MOUSE ID|2
+|LONG DESCRP|
+Choose this entry if you are using a bus-type mouse.  This type 
+of mouse connects to a special hardware board in your computer 
+and requires that the file MOUSE.COM be executed.  Any 
+mouse that uses MOUSE.COM, including the Microsoft, Logitech, 
+AT&T, HP Vectra, and Xerox 6065 mice, can be used as a bus-type 
+mouse.  Refer to the mouse manufacturer's installation 
+instructions.  For further information on .COM files, refer to 
+your DOS user's guide.
+}
+{
+|DESCRIPTION|IBM Personal System/2 Mouse
+|MOUSE ID|10
+|LONG DESCRP|
+Choose this entry if you are using the IBM Personal System/2 
+mouse.  This mouse connects to the IBM mouse port on your 
+computer.
+}
+{
+|DESCRIPTION|Microsoft Serial Mouse (RS232 )
+|MOUSE ID|3
+|LONG DESCRP|
+Choose this entry only if you are using a Microsoft serial mouse.  
+This mouse connects to one of the serial ports on your computer.
+}
+{
+|DESCRIPTION|Mouse Systems PC Mouse / SummaMouse / Compatibles
+|MOUSE ID|1
+|LONG DESCRP|
+Choose this entry if your mouse is any of the above, or if it is 
+a "generic" mouse.  If you are unsure of the type of mouse you 
+are using, you may find the manufacturer's name and the model 
+indicated on the bottom of the mouse or in your hardware 
+documentation.  If you are unable to determine the name and model 
+of your mouse, most likely you are using a generic serial mouse 
+and should choose this entry.  The mouse connects to one of the 
+serial ports on your computer.  Manager Mouse and the Torrington 
+mouse are also generic serial mice.
+}
+{
+|DESCRIPTION|SummaSketch 961 Cursor-Type Tablet
+|MOUSE ID|7
+|LONG DESCRP|
+Choose this entry if you are using the SummaSketch 9-inch hand 
+cursor-controlled data tablet.  This tablet connects to one of 
+the serial ports on your computer.
+}
+{
+|DESCRIPTION|SummaSketch 961 Stylus-Type Tablet
+|MOUSE ID|6
+|LONG DESCRP|
+Choose this entry if you are using the SummaSketch 9-inch stylus-
+controlled data tablet.  This tablet connects to one of the 
+serial ports on your computer.}
+}
+{
+|DESCRIPTION|SummaSketch 1201 Cursor-Type Tablet
+|MOUSE ID|5
+|LONG DESCRP|
+Choose this entry if you are using the SummaSketch 12-inch hand 
+cursor-controlled data tablet.  This tablet connects to one of 
+the serial ports on your computer.
+}
+{
+|DESCRIPTION|SummaSketch 1201 Stylus-Type Tablet
+|MOUSE ID|4
+|LONG DESCRP|
+Choose this entry if you are using the SummaSketch 12-inch 
+stylus-controlled data tablet.  This tablet connects to one of 
+the serial ports on your computer.
+}
+{
+|DESCRIPTION|Summagraphics MM1812 Cursor-Type Tablet
+|MOUSE ID|9
+|LONG DESCRP|
+Choose this entry if you are using the Summagraphics 18-inch hand 
+cursor-controlled data tablet.  This tablet connects to one of 
+the serial ports on your computer.
+}
+{
+|DESCRIPTION|Summagraphics MM1812 Stylus-Type Tablet
+|MOUSE ID|8
+|LONG DESCRP|
+Choose this entry if you are using the Summagraphics 18-inch 
+stylus-controlled data tablet.  This tablet connects to one of 
+the serial ports on your computer.
+}
+entry.  The mouse connects to one of the 
+serial ports on your computer.  Manager Mouse and the Torrington 
+mouse are also generic serial mice.
+}
+{
+|DESCRIPTION|SumMZ a      ÿÿ    ¨Ë            
+   Æ	ð	ô	ø	jB  B  0C  GC  nC  ¤C  @D  iG  H  »H  ÌH  ëH  ˜M  èT   U  RU  â	ä	æ	4	8	@	Ê	Î	                                                                                                                                                                                                                                                                                                                                                                            Vœ^œúÀu¸	‹ÌŒÓŽÐ¼QSVŽÀ¿  ‹ò¹
+ ó¥ŽØ¿³	Å6  ¹ ó¥¾³	ÇD  ÇD  ‹LÑáù rù¶rÇDÛ¹ ¿á
+Å6 ó¥¾³	‹Lƒùw¹ ëù€ r¹€ ‰L¿É	Å6 ó¥Ç  ÇÜÿÿè² ¾³	Ä>  ‹\&‰]‹\&‰]‹\&‰]‹L&‰M#ÉtÑáÄ> ¾É
+ó¥#Ût‹ËÄ> ¾åó¥¡úY[ŽÑ‹ã^ËzyxgÿVGA 1024     VGA Adapter (1024x768) 16-Color Mode                                             Uƒì‹ì3À‹³	ƒû'£·	£»	Ñã‹‡‰F ÿV ë¡³	=d |=‰ Ñà‹ð‹„  ‰F ÿV ƒÄ]ÃU‹ì]ÃU‹ìè¶9]ÃU‹ì]ÃU‹ìè¢7]ÃUƒì‹ì¸ ‹É	Kƒû£»	‰´}…ÛyÇ´  ¡´@£¸£åƒÄ]ÃUƒì‹ìƒ>á
+}Çá
+ ëƒ>á
+(~Çá
+( ¡á
+H» ™÷ûÑà@» ÇË
+  £É
+£¾£¼£á
+H‰·	uƒÄ]Ã3À‹¼C‰F‹Ã¹ ™÷ù‰F
+Ñà» +ØÇF  ‰^‹F=( }Ñà‹ðÇ„î  ÿFëé‹F
+‹^;Ø}HÑà‹ð‰œîÑã‹F
+‰‡î‹F…Ày‹^ÑãÑãÃ ‰Fë‹F
+‹^+ØÑãÑã‹NËƒÁ
+ÿN
+‰NÿFë®‹F‹^
+;ØuÑà‹ð‹F‰„î¡¼÷.[™÷>]» ™÷û@3Û£ì‰^‰^‹F‹ì;Ø~dÑà@÷.]™÷>[» ™÷ûÇF  ‹^‰F‰^‹F‹^;Ø|Ñà‹ð‹„îFÿFëæ‹FÑà‹ð‹F+F@‰F‹F‹^™÷û‰„î‹F@‰FÿFë‘ƒÄ]ÃUƒì‹ì¸ ‹É	…Û£»	‰Àxƒû~ÇÀ  ¡Ë	…À£Âx= ~ÇÂ  ¡À‹Â£å‰çƒÄ]ÃUƒì‹ìÇ»	 ¡É	= £¶}…ÀyÇ¶ ¡¶£º£åÑà‹ð‹„“	£¶ƒÄ]ÃUƒì‹ì¸ ‹É	ƒû£»	‰Ìƒû}ÇÌ ¡Ì£åH£ÈƒÄ]ÃUƒì‹ì¡Á‹ã
+;Ø}£ã
+ë¡Å‹ã
+;Ø~£ã
+¡ã
+£Ä¡Á» ™÷û‹ÄØ‹Ã™÷>Á» £Æ¡¿÷.Æ£É
+¡Æ÷.Á£Ë
+‰‰·	ƒÄ]ÃUƒì‹ìÇ»	 ¡É	= £Ê}…ÀyÇÊ ¡Ê£Î£åÑà‹ð‹„“	£ÊƒÄ]ÃUƒì‹ìÇ»	 ¡É	= £Ð…ÀyÇÐ  ¡ÐÇö  = £åu¡ø£öèîƒÄ]ÃUƒì‹ì¸ ‹É	ƒ>Ð£»	‰Úuƒûƒû}ÇÚ ë¡Ú= = }ÇÚ ¡Ú£åH£ÒèœƒÄ]ÃUƒì‹ìÇ»	 ¡É	= £Ô}…ÀyÇÔ ¡Ô£Þ£åÑà‹ð‹„“	£ÔƒÄ]ÃU‹ìèp3Ç»	 Ç·	  ]ÃU‹ì]ÃUƒì‹ìƒ>É	 uÇý è(OƒÄ]ÃU‹ìèUO]ÃU‹ì¡Ñ» ‹ù‹û£å‰É
+‰Ë
+‰·	‰»	]ÃU‹ì]ÃU‹ì]ÃUƒì‹ìÇF
+ÿ ¡É	…À‰Fy÷^ÇF
+ÿÿƒ>è uT3À‰F£€‹F;F}.¡€%ÿ = t#è´6…Àtù‹FÑà‹ð¡€‹^
+#Ø‰œå‰€ÿFëÊ¡€%ÿ = uÿN‹F£»	ë0ÇF  ‹F;F}èn6…Àt‹FÿFÑà‹ð¡€#F
+‰„åëÛ‹F£»	ƒÄ]ÃUƒì‹ìÇ»	 è7£åƒÄ]ÃUƒì‹ì¸ ‹É	Kƒû3Éë3ÉA…Ûx3Òë3ÒBÊ£»	‰ÿtÇÿ  ¡ÿ@£ê£åƒÄ]ÃUƒì‹ì¸ ‹Ë	‰å‰^ K£»	‰^ ¡É	ë,ë8‹F £æë0‹F £âë(‹F £äë ‹F £èë (08‹ðƒþsÑæ.ÿ¤@ƒÄ]ÃU‹ìÇ»	 ¡É	ë,ë8¡æ£åë0¡â£åë(¡ä£åë ¡è£åëkmu}…‹ðƒþsÑæ.ÿ¤]ÃU‹ì]ÃUƒì‹ìƒ>¹	u¡É	=ÿÿt…Àt¸ ë3À£Ö¡Ë	£Øëƒ>É	 t¸ ë3ÀÇØ  £Ö¡ÖÇ»	 £åƒÄ]ÃU‹ì¡É	£ò]ÃUƒì‹ì¡É	…À£ít`¸ P¸á
+Pèr ‹å¡á
+‹ã
+‹å
+‹ç
+…À£ï‰ó‰õ‰ñyÇï  ¡U‹ó;Ø~£ó¡ñ…ÀyÇñ  ¡W‹õ;Ø~£õë3À‹U‹W£ï£ñ‰õ‰óƒÄ]ÃUƒì‹ì‹v‹‹\;Ø}‰‰D‰Fƒ~
+ u‹v‹D;D|ƒ~
+u‹v‹D;D~‹v‹D‹\‰\‰D‰FƒÄ]ÃU‹ì¸ P¸á
+PèŸÿ‹å¸ P¸é
+Pè’ÿ‹åÇB  èÂ~]ÃU‹ì¸ P¸á
+Pèwÿ‹å¸ P¸é
+Pèjÿ‹åÇBÿÿèš~]ÃU‹ì3ÀP¸á
+PèPÿ‹å¡ÔÇ  ‹á
+‹å
+‹ã
+£	¡ç
+£‰‰‰è#@]ÃU‹ìèe0]ÃU‹ìè1]ÃU‹ìèèÜè‚.¡æ‹è£Á	‰Ã	]ÃU‹ìèòèÀ]ÃU‹ì]ÃUƒì
+‹ìÇ·	 Ç»	- Ç ƒ>É	 u¸U»¯‰F‰^ë¸Ç»ï‰F‰^ÇF  ‹F=- }Ñà‹ð‹~ƒF‹‰„åÿFëâÇF  ‹F= }Ñà‹ð‹~ƒF‹‰„É
+ÿFëâƒÄ
+]ÃU‹ìè}.]ÃU‹ìès1]ÃU‹ì¡¹	…Àt£Üè ]ÃUƒì‹ìƒ>µ	ƒÄ]Ãƒ>ý u
+ÇF èJëÇF  ¡´Ñà‹ð‹„æ‹¶ƒ>¼£‰	uèÚ¡ÀÂ% tèªëèþƒ~uè!JƒÄ]ÃUƒì"‹ì¡´‹¶‹¼‹À‰F¡Â‰F¡í‰F3À£´¡Ê£¶¸ £¼3À£Â£À¸ £í¡µ	ÑàÇF  ‰F‰N‰V‰^‹F=
+ }Ñà‹ð‹„á
+‰„É
+ÿFëçÇF  ‹F‹^;Øéç =
+ } ‰F @‹^ Ñã‹É
+‰FÑà‹ð‹„É
+‰F‰Në!‹F‰F @‹^ Ñã‹á
+‰FÑà‹ð‹„á
+‰F‰N¡ÈÑà‹ð‹„r‹ð‰F @@‹ÇF  ‰F ‰^‹F;F}t‹v ƒF ‹ÇF
+  £µ	¡µ	Ñà‹^
+;Ã~O‰^ C‹F Ñà‹ð‹~ ‹Ç‰F@@‰F ‹÷.Æ‹NÈ‰Œá
+‰^ ‰^
+C‹F Ñà‹ð‹~ ƒF ¡Æ÷-‹NÈ‰Œá
+‰^
+ë¥è6þÿFë„ÿFéÿ‹F‹^‹N‹V£´‹F£Â‹F£í‰¼‰À‰¶ƒÄ"]ÃUƒì‹ì¡½	…À‰FéS= |éKH‰Fé6èºüƒ>Öté7¡ç
+‹ã
+‹å
+‹á
+Çµ	 £ë
+£ï
+‰é
+‰í
+‰ñ
+‰ç
+‰ó
+ƒ>Ø tè—ýéû Çÿÿè­éï è‰éé èƒéã ¡á
+‹ã
+‹é
+ÿ6]ÿ6[Q£R‰V‰TèpC‹å»Ç\  £X‰^‰Zèµèm	é¢ ¡á
+‹ã
+‹å
+‹ç
+ƒ>£R‰V‰X‰T}¡W+Â£XÇZ3À£^£\èqè)	ë_è®ëZè©ëU¡À3Û‹Â‰F‰N‰Â‰Àèæ‹F‹^£À‰Âë,èÔë'èéXë"}ÒØÞbgl•š‹ðƒþ
+sÑæ.ÿ¤ŸƒÄ]ÃU‹ì¡¸‹º‹ê‹À£å¡Â£í¡¾ÇË
+  Ç·	 Ç»	 £É
+‰é‰ë‰ç]ÃUƒì‹ì¡Ì‹Î‹êÇ»	 £å¡¿÷.Æ£É
+¡Æ÷.Áº £Ë
+‰é‰‰·	‰çƒÄ]ÃU‹ì¡Ð‹Þ‹Ú‹ê£å¡ÖÇ»	 £í‰é‰ë‰ç]ÃUƒì‹ì3À‹µ	Kƒ>Üÿ£‰F‰^uÇF
+ÿÿë¡ÜHP£ÜèÖ:‹åÑø‰F
+ÇF  ‹F‹^;Ø|é“ H;ØuÇ ‹F;F
+u¸ ‹ÜKS£‰Üè—:‹åÑø‰F
+‹FÿFPèE:‹å‹^ÿFS£è6:‹åÿv£è+:‹å‹^CS£è:‹å£ƒ>í tè+ …Àtè~AëèyAƒ> tƒFÿFÇ  ÿFé`ÿƒÄ]ÃUƒì‹ìÿ6ÿ6è;‹åÿ6ÿ6‰Fè+‹å‹^Ø‰F
+ué‹^#Øt3ÀƒÄ]Ã‹F…Àt»¹‰F‰N‰^ë‹F
+»¹‰F‰N‰^¡‹+Ø‹+‹Vâ ‰N‰^t&‹ï+ØÿvSQè~@‹å‹Ø‹v‰¡ï‹v‰éXÿ‹F% t)¡ó+ÿvPÿvèM@‹å‹Ø‹v‰¡ó‹v‰é'ÿ‹F% t)¡ñ+ÿvPÿvè@‹å‹Ø‹v‰¡ñ‹v‰éöþ‹F% uéëþ¡õ+ÿvPÿvèè?‹å‹Ø‹v‰¡õ‹v‰éÂþ¸ ƒÄ]ÃUƒì‹ìÇF  ‹F;ï}ÇF ë‹F;ó~ÇF ‹F
+;ñ}ƒFë‹F
+;õ~ƒF‹FƒÄ]ÃUƒì‹ì¡¹	…Àt£Üè ƒÄ]ÃUƒì‹ìƒ>µ	ƒÄ]Ãƒ>Ø tƒ>Ö tÇÖ  è ¸ ÿµ	£Öèùëè ƒÄ]ÃUƒì
+‹ìÆT ¡ÔÇ  ‹ã
+ÇF ‹µ	£	‰N‰H‰Jƒ~ ~2‹FÿFPè´7‹åÿF‹H;Ø‰F~£Hë‹F‹J;Ø}£JÿNëÈ¡H‰Fƒ>í t7‹ñ;Ã}¡J;Ã|‰HëƒÄ
+]Ã¡õ‹J;Ø~‹H;Ø£JëƒÄ
+]Ãƒ>Üÿtÿµ	ë ¡µ	Ñàÿ6á
+P‰FèJ7‹å‹F@ÿ6ã
+Pè<7‹å¡J£¡;H|ÇL  ¡Ü£NèU<ÿëâƒ>ÖuÇÿÿÿµ	èü‚>T tè3rƒÄ
+]ÃUƒì‹ì3ÀP¸á
+Pèö‹å¡á
+‹ã
+‹å
+‹ç
+‰+ÈÑù‰+ÚÑû‰N
+±£¡UÓø‹N
+;Á£V‰‰^~‰Vÿ6]ÿ6[ÿ6Vè¢=‹å‹^;Ã£X~‰XÇá
+  ¡X»£S£ã
+èí$‹å»ÿSÿ6VPèq=‹å»£S£å
+è!$‹å»ÿSÿ6XPèW=‹å»ÂS£ç
+è¹$‹å»ÿSÿ6VPè==‹å»ÂS£é
+èí#‹å»ÿSÿ6XPè#=‹å»á S£ë
+è…$‹å»ÿSÿ6VPè	=‹å»á S£í
+è¹#‹å»ÿSÿ6XPèï<‹å‹VÇó
+  ‹+Ë‹+XÇF
+ ÇF	 £ï
+‰R‰T‰ñ
+‹F…Àx7‹^Ñã‰FH‹NÑá‹ñ‹TŒá
+‰ã
+‰FÑà‹ð¡R„á
+‰‡á
+ƒFÿNëÂ¡VÇF ÇF  £R‹F=
+ }M‹^‰^ C‹N Ñá‹ñ‰F@‹NÑá‹ù‹R+á
+‰Œá
+‰^ ‰^C‹N Ñá‹ñ‰FÑà‹ø¡T…á
+‰„á
+‰^ÿFë«¡XÇF ÇF	 £T‹F…Àx7‹^Ñã‰FH‹NÑá‹ñ‹T+Œá
+‰ã
+‰FÑà‹ð¡R+„á
+‰‡á
+ƒFÿNëÂ¡+V3Û£R‰^‰^‹F=
+ }M‹^‰^ C‹N Ñá‹ñ‰F@‹NÑá‹ù‹Rá
+‰Œá
+‰^ ‰^C‹N Ñá‹ñ‰FÑà‹ø¡T+…á
+‰„á
+‰^ÿFë«¡á
+‹ã
+Çµ	 ƒ>½	£1‰3u'¡´Ñà‹ð‹„æ‹¶ƒ>¼£‰	uè-ùëè`ëè´ûƒÄ]ÃUƒì‹ì¡É	‹Ë	‰^+Ø£\‰Z}Z¡í
+ÿ6]ÿ6[P£VèÞ:‹å£Xè4 ¸Pÿ6dÿ6ZèÇ:‹å…À£duÇd ¡á
+‹ã
+£R‰TèÀ ƒÄ]ÃUƒì‹ì¡V‹X;Ø}£dë¡X£d¡dÑøÑø= £d}Çd ëƒ>dF~ÇdF ƒÄ]ÃUƒì‹ì¡É	‹Ë	‰^+Ø£\‰Z}Z¡å
+‹ç
+ƒ>£V‰X}¡W+Ã£Xèyÿ¸Pÿ6dÿ6Zè:‹å…À£duÇd ¡á
+‹ã
+£R‰Tè ƒÄ]ÃUƒì‹ìƒ>í t:¡V‹RØ;ï|&‹R+Ø;ó¡TX;ñ|¡T+X;õ~ƒÄ]Ã¡\3ÛS£`£b‰^‰^è¤ ‹åÇF ‹F;d}&ƒFÿ6dPÿ6Zèk9‹å`ÿv£bèu ‹åÿFëÑƒF¡d‹^ÿv‰F‰bèV ‹å¡d@‹½	ƒû£µ	tƒûu%¡d@‹^CC‰^Ñã‹R‰á
+‹T‰ã
+£d@£µ	¡½	= t= uèÛòëè‰ùƒÄ]ÃUƒì‹ìÿ6bèH ‹å»ÿSÿ6VPèÌ8‹åR‹^
+Ñã‰‡á
+ÿ6b‰Fèo‹å»ÿSÿ6XPè¥8‹å‹T+Ø‹F
+Ñà‹ð‰œã
+‰^ƒÄ]ÃUƒì‹ìÇP  ¡Ðé© ¸â£Né® ¸ä£Né¥ ¡Ò= }‹|‰PC÷ëÑà~£Né‡ ¡z£P@‹Òƒë‰F ‹Ã‹N ÷éÑà|£Nëe¡Ò= }‹¾‰PC÷ëÑàÀ£NëH¡ £P@‹Òƒë‰F ‹Ã‹N ÷éÑà"£Në&ÇP ¸ú£Nëø
+J‰‹ðƒþsÑæ.ÿ¤—ƒÄ]ÃUƒì4‹ì¡µ	H= ‰F}ƒÄ4]Ã¡ÀÂ% tèèâÇF ‹F=
+ }Ñà‹ð‹„á
+‰B ÿFëè¡á
+‹ã
+ÇF ƒ>n ‰F‰^tSPèð‹åƒ>ÜÿuÇFÿÿë¡ÜHP£ÜèN0‹åÑø‰FÇF  ‹F;F|éï‹F=
+ }*‰F @‹^ Ñã‹ó‹Z ‰F ‰F@‹N Ñá‹ñ‹J ‰F‰N‰^ë‹FÿFPèº/‹å‹^ÿFS‰Fè«/‹å‰F‹F+F‹^+^…À‰F‰^u…Ûuéï ƒ~ u¡îÇF  ‰FëPƒ~ uÇF  ¡ìH‰Fë<‹F÷Øÿ6[ÿ6]Pè6‹åÿ6]ÿ6[ÿv‰F
+èn6‹å‹^
+NQNQ‰F‰^è)‹åÇµ	 Ç¹	  ‹F‹^Ø‹N‹VÑ‰á
+‹^+Ø‰å
+‹^+Ù‰ç
+‹^+Ø‰é
+‹^+Ù‰ë
+‹^Ø‹FÁ‹ÜÇÜÿÿ£ï
+‰N‰ã
+‰í
+èÊö‹Fƒ>p£Üt‹FH‹^;Ø}ÿvÿvèd‹å‹F;Fuy¡ÜHP£ÜèÈ.‹åÑø‹^ƒû
+‰F}*‰^ C‹F Ñà‹ð‹B ‰^ ‰^C‹N Ñá‹ñ‹J ‰F‰N‰^ë‹FÿFPèD.‹å‹^ÿFS‰Fè5.‹å‰FÿFƒ>nuÿvÿvèå‹åë‹F‹^‰F‰^ÿFéþèÞƒÄ4]ÃUƒì‹ì‹v‹…Àx‹v ‹…Àx¸ ë¸ ‰Fë‹v ‹…Àx¸ ë¸ ‰FF
+PFP‹v ÿ4‹vÿ4ÿvèø ‹åÇFÿ¡îÇF  ‰F‹F÷n
+‰F ‹F÷n‹^ +Ø‰^ }‹F÷n
+‰F ‹F÷n‹^ +Ø÷Û‹F;Ø‰^|9;Øté ‹F+F‰F }‹F+F÷Ø‹^+^‰F ‰^}
+‹F+F÷Ø‹Ø‹F ;Ã~[‹F‹^‹N‰F‰N‰^ë ¡ìH‹^;Øuƒ~uë4ÿNéaÿ‹FÑà‹ð‹FH‹œð;Ø|‹F@‰FÑà‹ð‹„î‰Fé9ÿÿNé3ÿÿv ÿvÿvÿvÿvè ‹åƒÄ]ÃUƒì‹ì‹Fë‹F‹v‰ë'‹F÷Ø‹v‰ë•ŸŸ•‹ðƒîrƒþsÑæ.ÿ¤«‹Fë%‹F
+‹v‰ë.‹F
+÷Ø‹v‰‹F
+÷Ø‰ëËËÕÕ‹ðƒîrƒþsÑæ.ÿ¤èƒÄ]ÃUƒì‹ìƒ>ì é¢ ¡î‹^
++Ø‹N
+È‹F££‰‰è#ò…Àtèv3ÇF ‹F‹ì;Ø~jÑà‹ð‹^
++œî‹F
+„î‹N+N£‰‰‰èâñ…Àtè53‹FÑà‹ð‹^
++œî‹F
+„î‹NN£‰‰‰è®ñ…Àtè3ÿFë‹ƒÄ]ÃU‹ì¡æ‹¶‹ÖÇÖ ‹N£¡ö£l3À£ö¸ä£N¡P£j3À£P¡À£n¡Â‰Ô3Û£p‰f‰h‰À‰Â]ÃUƒì‹ì¡l‹ÞÑã‹“	‹f‹h£ö¡j£P¡n£À¡p£Â‰Ô‰N‰ÖƒÄ]ÃUƒì
+‹ìè[ÿ¡á
+‹ã
+‹ná ‰F‰F‰^‰^t¸ P3ÀPèK ‹å¡á
+‹ã
+‰F‰^¡p% t,‹F‹^‹µ	ÑáIIºþÿRQ£á
+‰ã
+è ‹å‹F‹^£á
+‰ã
+èIÿƒÄ
+]ÃUƒì&‹ìƒ>¼u¸ ë	¡¼» ÷ëH‰F
+Ñø‹^*ÇF ‰F‰^‹F;µ	|é‚ ‹F,Fÿv*è$*‹åÿv‰F è*‹å‹^ +Ø‹F*@P‰^è*‹å‹^CS‰Fèú)‹å‹^+Øÿ6[ÿ6]Sè1‹å‹^…Û‰Fy‹F÷Ø‹Ø‹F…À‰^ y‹F÷ØPÿv è^0‹å;F
+‰F}ÿFérÿ‹F;F
+}ƒÄ&]Ãÿv¸èPÿvèÄ0‹å»èSPÿv
+è·0‹åÿv»èSÿv‰F è¥0‹å»èSPÿv
+è˜0‹åÿv»üSÿv‰F"è†0‹å»èSPÿvèy0‹åÿv»èSÿv‰Fèg0‹å»èSPÿvèZ0‹åÿ6]ÿ6[ÿv"‰FèG0‹åÿ6]ÿ6[ÿv‰F"è40‹å‹µ	ÇF  ‰F‰^‹F= }Ñà‹ð‹„á
+‰„É
+ÿFëçÇµ	 ÿv*èÎ(‹å‹^*CS‰FèÁ(‹å‹^‹NË‹V +Ê‰á
+‹N‰FÁ‹N"+Á£ã
+‹F+Ã+Â‹^+^+Ù‹N‹V£å
+¡ÜÇÜÿÿ‰F$‰é
+‰ë
+‰ç
+èxð‹F$‹^ÇF  £Ü‰µ	‹F= }Ñà‹ð‹„É
+‰„á
+ÿFëçÿv*è:(‹å+F Pÿv*èM(‹å‹F*@P‰F è!(‹å+F"Pÿv è4(‹å‹F+F,;F*‰Ft-ÿv*èÿ'‹åPÿvè(‹å‹F@‹^*CS‰F èå'‹åPÿv èû'‹åëÅƒÄ&]ÃUƒì‹ì¡Ë	= £¸= }Ç¸ ¡¸H‹Í	ƒû£´‰¶‰º}…ÛyÇ¶ ¡¶Ñà‹ð‹„“	‹Ï	ƒû£¶‰Ìƒû}ÇÌ ¡ÌH‹Ñ	ƒû£È‰Ê}…ÛyÇÊ ¡Ê£ÎÑà‹ð‹„“	‹ÁÇÆ ‹×	ƒù£Ê‰Ð‰Ä…ÉyÇÐ  Çö  ¡Ù	ƒ>Ð£Úu= = }ÇÚ ë¡Ú= = }ÇÚ ¡ÚH‹Û	ƒû£Ò‰Ô}…ÛyÇÔ ¡Ô£ÞÑà‹ð‹„“	‹Ý	£Ô‰èOõ3À» ‹·‹U£ñ£ï£Ø£è£ä£â£æ£À£Â£ÿ¡W£õ3ÀÇ·	 Ç»	- ‰F£í‰¾‰¼‰ó‰‰ý‰Ö‰ê‹F=- }Ñà‹ð‹„U‰„åÿFëçÇF  ‹F= }Ñà‹ð‹„¯‰„É
+ÿFëçƒÄ]ÃUƒì‹ìƒ>¹	 uƒÄ]Ãè"bƒ>³	u3Àë3À@ƒ>ž ‰FuÇF  ë(ƒ~ tè)ÇF  ƒ>žu¡¢Ñøë¡¢Ç·	  ‰FÇ ¡ éÆ ÇF  ¡FéÆ ¡‰F¡…Àt£¡Ž‰F ¡‹^ ÷ã‹1Ò÷ó‹Ø^é” ¡‰F¡…Àt£¡Ž‰F ¡‹^ ÷ã‹1Ò÷ó‹Ø^ëc¡÷Ø‰F¡…Àt£¡+‹÷ã‹1Ò÷ó)Fë7¡÷Ø‰Fë-¡‹Ž^‰Fëœ#ª#Ü#$9$C$‹ðƒþsÑæ.ÿ¤V$‹F‹+Ø‹†+IÈ‰N‰^
+¡œë`¡á
++F‹ã
++^
+£‚‰„ëX¡á
++F
+‹ã
+^£‚‰„ëB¡á
+F‹ã
++^£‚‰„ë,¡á
++F‹ã
++^£‚‰„ë$¥$»$Ñ$‹ðƒþsÑæ.ÿ¤ç$ƒ>Š uƒ>€ t
+è–`…Àté®¡Š% ué± ¡ÿ…Àt= té¢ ƒ~ tèbÇF  ¡œë~¡‚£¢‹„†K£‰‰ël¡„£+¢‹‚†K£‰‰ëL¡‚£+¢‹„£‰‰ë1¡„£¢‹‚£‰‰ëB%b%‚%%‹ðƒþsÑæ.ÿ¤¸%è3G¡Š% uéÒ ƒ~ tèµ¡œéµ ¡‚£¢‹„C‰"K£‰é™ ¡‚@£"H‹„+‰+¢£‰ëp¡‚+£+¢‹„†+K‰+"C£‰ëC¡‚†+H£+"@‹„‰¢£‰ëë%&>&k&‹ðƒþsÑæ.ÿ¤˜&Ç–ÿ¡”‰Fè¡1‹F£”ƒÄ]ÃU‹ìÄ6¸&‹D$&‹\&&‹LF&‹TD£
+&‹DJ‰&‹\H£0&‹DN‰.&‹\L£4&‹DP£6&‹DR£8&‹DB£(‰,‰*‰2]ÃUƒì‹ì¡¾‹¼‰F‰^‹FFtC‹FÄv&‹\$;Ø‰F w&;D&wŒÀ‹Þ£º‰¸è^èbÿ¸ ƒÄ]ÃÄv&‹DZ&‹\X‰F‰^ëµ¡¾‹¼£º‰¸èÙ]è3ÿ3ÀƒÄ]ÃUƒì‹ìŒØ»æŒÙºX£Â‰N‰V‰Àè×Ù‹F‹Ü‹Þºÿ£â3À£³£µ¡Æ‰Ø‹ÄPS£¶‰Ú‰¯‰±‰´è½‹åÇ_  Ç± ‰FÄ6´&‹DB% t
+ŒÀ‹Þ‰F‰^ÿ6¶ÿ6´èŠ‹å;Ftÿ±ÿ6¶ÿ6´èt‹å‰Fÿ6¶ÿ6´èd‹åHuLÄ6´&‹D2&‹\(C‹¯;È‰F‰^
+~£¯‹F
+‹±;Ø~£±‹F‹³;Ø}£³‹F
+‹µ;Ø}£µÿ_Ä6´&‹DV&DTtÄ6´&‹DV&‹\T£¶‰´éCÿ¡±‹^‹N£i‰¼‰¸‰´‰¾‰º‰¶è_\¡Õ	…Àx= ~¸ ë¡Õ	£šÑà‹ð‹„“	3Û£”‰Š‰œ‰ž‰ èv[èD[¸ Æª 3Û‹A‹8£¦£«£¨‰ˆ‰†‰’‰Œ‰Ž‰‰€‰¯‰­ƒÄ]ÃUƒì‹ìƒ> u¡W@+ã
+£ã
+¡ã
+…À£«uÇ« Ç¦  èC¡‹C‹‹ˆ£É
+‰Í
+‰Ï
+‰Ë
+è™[Ç·	 Ç ƒÄ]ÃUƒì‹ì¡É	Ç¦ £«èûÇ»	 Ç·	 ¡è‹‹A‹£å¡ˆ£Ï
+‰Ë
+‰Í
+‰É
+è?[ƒÄ]ÃUƒì‹ìè![Ñ&èÿ6èØZ‹åƒ>˜ÿ‰FuÿFë¡@Pè¿Z‹å‹^;ÃuÿN‹Fÿ6£è¦Z‹å@ÿ6£è™Z‹å@ÿ6£èŒZ‹åÿ6£è€Z‹åÿ6£ètZ‹åÿ6£èhZ‹åÿ6£è\Z‹åÿ6£èPZ‹åÿ6 £èDZ‹åÿ6"£ è8Z‹åÿ68£"è,Z‹åŠ ‹Â‹À£†‰´‰¶ƒÄ]ÃUƒì‹ì¡É	% ¢ªèÐÇ»	  ª0ä£åƒÄ]ÃU‹ì¡É	‹Ë	Ç»	 £ž£å‰ ‰ç]ÃUƒì‹ì¡É	…ÀyÉ	ëñ¡É	=|.É	ëð¡É	Â»„™÷û£œ‹Ã÷.œ‹Šã?ÿ±‹œÓâÚÇ»	 £å‰ŠƒÄ]ÃUƒì‹ì¡É	£¨è0Ç»	 ¸æPèó‹å£åƒÄ]ÃUƒì‹ìÿv ÿvèÚ‹åÄv&‹\Šª0í‰N á 3Ò‰F3À‰F‰F‰F
+¡Š%ðÿ£ŠF £ŠŒÀ‰^‹Þ‰FˆN‰V‰V‰V‰^‹FFué£ ÿvÿvèx‹å;Fté Äv&‹D;Fté ±&‹Óø%ÿ Š^0ÿˆF0ä;Ã‰^ u÷Ó!ŠŒÀ‹ÞƒÄ]ÃŠF0ä…Àu‹F‹^‰F‰^ë,ŠF0äHu‹F‹^‰F‰^
+ëŠF0ä= u‹F‹^‰F‰^Äv&‹DV&‹\T‰F‰^éRÿŠF0ä= u0‹F‹^Ãt&Šûÿ‹FƒÄ]Ã‹F‹^
+Ãt&Šþÿ‹FƒÄ]Ã‹F‹^Ãt‹FƒÄ]Ã‹F ‹^ƒÄ]ÃUƒì‹ìÿv ÿvèx‹åÄv&‹\ŒÁ‹Ö‰F‰N‰N‰V‰V‰^
+‹FFt{ÿvÿvèH‹å;FukÄv&‹D‰Fƒ>¦ t‰FëÄv&‹D(@‰F‹F‹^
+;Øt‹^‹N‰F
+‰N‰^‹F;«u‹F‹^ƒÄ]Ã‹F;«Äv&‹DV&‹\T‰F‰^é}ÿÄv&‹DŒÃ‹Î‰F
+‰N‰N‰^‰^‹FFué† ÿvÿvè¨‹å;FuvÄv&‹D‰Fƒ>¦ t‰FëÄv&‹D(@‰F‹F‹^
+;Øt‹^‹N‰F
+‰N‰^‹FÑà;«‰FuÇ­ ‹F‹^ƒÄ]Ã‹F;«Äv&‹DV&‹\T‰F‰^éoÿƒ>¦ tÄv&‹D‰FëÄv&‹D(@‰F‹F ‹^ŽÀ&‹O‰F‰F‰F‰N
+‰^‰^‰^‹FFuéÅ ÿvÿvèØ ‹å;Fté² Äv&‹D‰Fƒ>¦ t‰FëÄv&‹D(@‰F‹F‹^
+;Øt‹^‹N‰F
+‰N‰^¡«‹^;Ø}"+Ã‹«+N;Á‹F‹NÇ­  ‰F‰N‰^‹FÑà‹«;Ã‰F}(+Ø‹«+N;Ù}‹^‹NÇ­ ‰F‰N‰^Ç­ Äv&‹DV&‹\T‰F‰^é0ÿ‹FÑà;«}Ç­ ‹F‹^ƒÄ]ÃUƒì‹ìÄv&‹DB%  t	&‹Dn‰FëÄv&‹%ÿ ‰F‹FƒÄ]ÃUƒì‹ì¡Æ‹Ä‰F‰^‹FFt$ÿvÿvè­ÿ‹å;¨tÄv&‹DV&‹\T‰F‰^ëÔ‹FFu¡Æ‹Ä‰F‰^Ç­  ÿvÿvèçü‹åPS‰F‰^èxû‹å&Šÿþ£¾£º£¶‰¼‰¸‰´èØT¡8£†ƒ>­ u¡@‹«;Ãt3ƒ>­ tÇ˜ÿÿÇ~ èùëƒ>¦ u¡@ÿ6«Pè#T‹å£˜èbù¡@3Û‹Šá £ˆ‰’‰Œ‰Ž‰t	¡ £’£Œ¡Š% t¡‹£Ã’‰Žƒ>u¡(% ë3À£€ƒÄ]ÃUƒì‹ìÇ»	 ¡É	…Àx= ~¸ ë¡É	£å£šÑà‹ð‹„“	£”ƒÄ]ÃUƒì‹ì¸æPèLþ‹å‹š‹

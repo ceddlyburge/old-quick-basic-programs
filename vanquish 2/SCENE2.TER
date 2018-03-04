@@ -1,0 +1,177 @@
+DECLARE SUB QUICKINFO (P!, N!, TURNS!, MOVES!)
+DECLARE SUB PIC ()
+DECLARE SUB readterain (filename$)
+DECLARE SUB posforces (P!)
+DECLARE SUB chooseunit (P!, money!)
+DECLARE SUB INFO2 (P!, N!, MOVES)
+DECLARE SUB combat1 (N!, P)
+DECLARE SUB moveunit ()
+DECLARE SUB init ()
+DECLARE SUB show (X, Y, S$, cl)
+'-----------------------------------------------------------------------------
+'
+' BattleSim Version .01
+' By the skillful Cedd and Simon
+'
+'-----------------------------------------------------------------------------
+DIM SHARED MAP(2596)
+DIM SHARED PLAYER(2, 30, 5)
+DIM SHARED LET$(16)
+DIM SHARED move(16)
+DIM SHARED maxrange(16)
+DIM SHARED probhit(16)
+DIM SHARED damage(16)
+DIM SHARED hitp(16)
+DIM SHARED maxsup(16)
+DIM SHARED maxnum(16)
+DIM SHARED cost(16)
+DIM SHARED supply(16)
+DIM SHARED INAIR(16)
+DIM SHARED SHIP(16)
+DIM SHARED TERAIN(60, 40)
+DIM SHARED movepen(30)
+DIM SHARED SHIPONLY(30)
+DIM SHARED suplyPT(30)
+DIM SHARED defbonus(30)
+DIM SHARED LANDONLY(30)
+DIM SHARED CO(2)
+DIM SHARED samcap(16)
+DIM SHARED full(16) AS STRING * 18
+DIM SHARED TER$(30)
+DIM SHARED TERFUL(30) AS STRING * 10
+DIM SHARED sustain(30)
+DIM SHARED TECOL(30)
+DIM SHARED WHOSTHERE(60, 40)
+COMMON SHARED col1, col2, TURNS
+'-----------------------------------------------------------------------------
+SHELL "c:\graphics\FRACTINT\world8"
+SHELL "C:\GAMES\JF2\final"
+SCREEN 9
+RANDOMIZE TIMER
+CO(1) = 1
+CO(2) = 4
+init
+DEF SEG = 0
+POKE &H417, &HF0
+readterain "c:\proglang\qb45\scene1.ter"
+chooseunit 1, 100
+chooseunit 2, 100
+posforces 1
+posforces 2
+SCREEN 12
+WIDTH , 60
+INFO2 1, 1, 1
+DO
+TURNS = TURNS + 1
+moveunit
+LOOP
+
+SUB chooseunit (P, money)
+DIM army(16)
+SCREEN 0
+WIDTH , 43
+COLOR 4, 0
+LOCATE 1, 1: PRINT "                               BATTLESIM V 0.1"
+PRINT
+PRINT STRING$(80, 196)
+COLOR 15
+LOCATE 5, 1: PRINT "Player "; P; " Please choose your forces. Funds available= "; money
+COLOR 11
+LOCATE 7, 1: PRINT "Numeric pad cursors 2 & 8 moves cursor up and down."
+PRINT "Numeric pad + & - changes number in force. ENTER ends selection."
+PRINT
+COLOR 4, 0
+PRINT STRING$(80, 196)
+COLOR 15, 4
+LOCATE 13, 1: PRINT "Name of Unit        Move range             Cost             No in unit             "
+LOCATE 14, 1: PRINT "                              Resupply time      Attack range        No in force"
+curs = 1
+DO
+COLOR 15, 0
+FOR N = 1 TO 10
+LOCATE 15 + (N * 2), 1: PRINT SPACE$(80)
+LOCATE 15 + (N * 2), 1: PRINT full(N);
+LOCATE , 25: PRINT move(N);
+LOCATE , 35: PRINT maxsup(N);
+LOCATE , 45: PRINT cost(N);
+LOCATE , 55: PRINT maxrange(N);
+LOCATE , 65: PRINT maxnum(N);
+LOCATE , 75: PRINT army(N); "   "
+NEXT N
+ct = 0
+FOR N = 1 TO 10
+ct = ct + army(N) * cost(N)
+NEXT N
+LOCATE 37, 64: COLOR 15, 4: PRINT "Total Cost "; ct
+IF ct > money THEN BEEP: army(curs) = army(curs) - 1
+COLOR 0, 7
+LOCATE 15 + (curs * 2), 1: PRINT SPACE$(80)
+LOCATE 15 + (curs * 2), 1: PRINT full(curs);
+LOCATE , 25: PRINT move(curs);
+LOCATE , 35: PRINT maxsup(curs);
+LOCATE , 45: PRINT cost(curs);
+LOCATE , 55: PRINT maxrange(curs);
+LOCATE , 65: PRINT maxnum(curs);
+LOCATE , 75: PRINT army(curs)
+A$ = INPUT$(1)
+IF A$ = "8" THEN curs = curs - 1
+IF A$ = "2" THEN curs = curs + 1
+IF curs = 0 THEN curs = 10
+IF curs = 11 THEN curs = 1
+IF A$ = "+" THEN army(curs) = army(curs) + 1
+IF A$ = "-" THEN army(curs) = army(curs) - 1
+IF A$ = CHR$(13) THEN EXIT DO
+IF army(curs) < 0 THEN army(curs) = 0
+LOOP
+FOR N = 1 TO 10
+FOR T = 1 TO army(N)
+IF army(N) = 0 THEN EXIT FOR
+count = count + 1
+PLAYER(P, count, 3) = maxnum(N)
+PLAYER(P, count, 4) = N
+PLAYER(P, count, 5) = maxsup(N)
+IF count > 29 THEN EXIT SUB
+NEXT T, N
+END SUB
+
+SUB combat1 (N, P)
+c$ = CHR$(197) 'Cross Hair sights ascii character 197
+initialx = PLAYER(P, N, 1)
+initialy = PLAYER(P, N, 2)
+IF P = 1 THEN pn = 2 ELSE pn = 1
+maxx = initialx + maxrange(PLAYER(P, N, 4))
+maxy = initialy + maxrange(PLAYER(P, N, 4))
+minx = initialx - maxrange(PLAYER(P, N, 4))
+miny = initialy - maxrange(PLAYER(P, N, 4))
+X = initialx
+  DO
+  A$ = INPUT$(1)
+  IF A$ = "5" THEN EXIT DO
+  IF A$ = "1" THEN Y = Y + 1: X = X - 1
+  IF A$ = "2" THEN Y = Y + 1
+  IF A$ = "3" THEN Y = Y + 1: X = X + 1
+  IF A$ = "4" THEN X = X - 1
+  IF A$ = "6" THEN X = X + 1
+  IF A$ = "7" THEN Y = Y - 1: X = X - 1
+  IF A$ = "8" THEN Y = Y - 1
+  IF A$ = "9" THEN Y = Y - 1: X = X + 1
+  IF X < 1 THEN X = 1
+  IF Y < 1 THEN Y = 1
+  IF Y > 40 THEN Y = 40
+  IF Y < 1 THEN Y = 1
+  IF X > maxx THEN X = maxx
+  IF X < minx THEN X = minx
+  IF Y > maxy THEN Y = maxy
+  IF Y < miny THEN Y = miny
+  show X, Y, c$, 11
+  LOOP
+  found = 0
+  FOR o = 1 TO 30
+  IF X = PLAYER(pn, o, 1) AND Y = PLAYER(pn, o, 2) THEN found = 1: EXIT FOR
+  NEXT o
+  hp = 0
+  IF found = 1 THEN
+  FOR T = 1 TO PLAYER(P, N, 3)
+  IF RND < probhit(PLAYER(P, N, 4)) THEN hp = hp + damage(PLAYER(P, N, 4))
+  NEXT T
+  killed = hp / hitp(PLAYER(pn,
